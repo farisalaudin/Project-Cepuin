@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* ============================
+   Cepuin Design Tokens (Tailwind v4)
+   ============================ */
+
+@theme inline {
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Primary — Trust, Government blue */
+  --color-primary: #2563EB;
+  --color-primary-light: #DBEAFE;
+  --color-primary-dark: #1D4ED8;
+
+  /* Accent — Urgent, Warning amber */
+  --color-accent: #F59E0B;
+  --color-accent-light: #FEF3C7;
+
+  /* Semantic colors */
+  --color-success: #10B981;
+  --color-success-light: #D1FAE5;
+  --color-danger: #EF4444;
+  --color-danger-light: #FEE2E2;
+  --color-orange: #F97316;
+  --color-orange-light: #FFEDD5;
+
+  /* Neutral */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: #6B7280;
+  --color-muted-light: #F3F4F6;
+  --color-border: #E5E7EB;
+}
+
+/* Light mode */
+:root {
+  --background: #FAFBFC;
+  --foreground: #111827;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0F172A;
+    --foreground: #F1F5F9;
+  }
+}
+
+/* Base body styles */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus ring for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-foreground);
+}
