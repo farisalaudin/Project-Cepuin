@@ -119,3 +119,15 @@ export const createReport = async (reportData: Partial<Report>) => {
   if (error) throw error
   return data as Report
 }
+
+/**
+ * Delete a report from the database.
+ */
+export const deleteReport = async (reportId: string) => {
+  const { error } = await supabase
+    .from('reports')
+    .delete()
+    .eq('id', reportId)
+
+  if (error) throw error
+}

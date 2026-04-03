@@ -38,10 +38,14 @@ export const uploadReportPhoto = async (file: File, reportId: string) => {
  * Resizes image to max 1200px and reduces quality to 0.75.
  */
 const compressImage = (file: File, maxBytes: number): Promise<File> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const img = new Image()
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')!
+
+    img.onerror = () => {
+      reject(new Error('Gagal memproses gambar. File mungkin rusak atau tidak didukung.'))
+    }
 
     img.onload = () => {
       let { width, height } = img
@@ -63,7 +67,11 @@ const compressImage = (file: File, maxBytes: number): Promise<File> => {
 
       canvas.toBlob(
         (blob) => {
-          resolve(new File([blob!], file.name, { type: 'image/jpeg' }))
+          if (!blob) {
+            reject(new Error('Gagal mengompres gambar.'))
+            return
+          }
+          resolve(new File([blob], file.name, { type: 'image/jpeg' }))
         },
         'image/jpeg',
         0.75

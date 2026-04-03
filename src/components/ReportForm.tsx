@@ -11,10 +11,11 @@ import {
   ThumbsUp
 } from 'lucide-react'
 import { Report, ReportCategory } from '@/types'
-import { createReport, findNearbyDuplicates } from '@/lib/reports'
+import { createReport, findNearbyDuplicates, deleteReport } from '@/lib/reports'
 import { uploadReportPhoto } from '@/lib/storage'
 import { calculateUrgencyScore } from '@/lib/urgency'
 import { submitVote } from '@/lib/votes'
+import { supabase } from '@/lib/supabase'
 import CategorySelect from './CategorySelect'
 import PhotoUpload from './PhotoUpload'
 import LocationDetect from './LocationDetect'
@@ -66,12 +67,17 @@ export default function ReportForm() {
     if (!category || !location) return
 
     setIsSubmitting(true)
+    let newReport: Report | null = null
+
     try {
+      // 0. Get user session if exists
+      const { data: { user } } = await supabase.auth.getUser()
+
       // 1. Create initial report (to get ID)
       const now = new Date().toISOString()
       const initialUrgency = calculateUrgencyScore(0, category as ReportCategory, now)
 
-      const newReport = await createReport({
+      newReport = await createReport({
         category: category as ReportCategory,
         description,
         lat: location.lat,
@@ -80,24 +86,35 @@ export default function ReportForm() {
         status: 'dilaporkan',
         urgency_score: initialUrgency,
         vote_count: 0,
+        user_id: user?.id || null, // Link to user if logged in
       })
 
       // 2. Upload photo if exists
       if (photo && newReport.id) {
-        const photoUrl = await uploadReportPhoto(photo, newReport.id)
-        // Update report with photo URL
-        const { supabase } = await import('@/lib/supabase')
-        await supabase
-          .from('reports')
-          .update({ photo_url: photoUrl })
-          .eq('id', newReport.id)
+        try {
+          const photoUrl = await uploadReportPhoto(photo, newReport.id)
+          // Update report with photo URL
+          const { error: updateError } = await supabase
+            .from('reports')
+            .update({ photo_url: photoUrl })
+            .eq('id', newReport.id)
+
+          if (updateError) throw updateError
+        } catch (photoErr) {
+          // If photo upload/update fails, delete the report so user can retry properly
+          if (newReport.id) {
+            await deleteReport(newReport.id)
+          }
+          throw photoErr
+        }
       }
 
       setReportId(newReport.id)
       setIsSuccess(true)
     } catch (err) {
       console.error('Submission error:', err)
-      alert('Gagal mengirim laporan. Silakan coba lagi.')
+      const message = (err as Error).message || 'Terjadi kesalahan sistem.'
+      alert(`Gagal mengirim laporan: ${message}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -119,15 +136,15 @@ export default function ReportForm() {
         <div className="w-full space-y-3">
           <button
             onClick={() => router.push('/')}
-            className="w-full py-3.5 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-dark transition-all duration-200 shadow-lg active:scale-95"
+            className="w-full py-3.5 bg-primary text-white font-semibold rounded-2xl hover:bg-primary-dark transition-all duration-300 shadow-lg active:scale-95"
           >
             Lihat Laporan Lain
           </button>
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => router.push('/riwayat')}
             className="w-full py-3.5 bg-white border-2 border-border text-foreground font-semibold rounded-2xl hover:bg-muted-light transition-all duration-200 active:scale-95"
           >
-            Masuk untuk Pantau Status
+            Pantau Riwayat & Status
           </button>
         </div>
       </div>

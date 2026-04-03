@@ -38,8 +38,8 @@ npm install clsx tailwind-merge
 
 Buat file `.env.local` di root project:
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://ekwkohemvghbiscylmht.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrd2tvaGVtdmdoYmlzY3lsbWh0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxMTgzMDMsImV4cCI6MjA5MDY5NDMwM30.PGF062PGMC4ESROG2CAJ7ShDFO8oqq1tJc-7LzZ5sic
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 ```
 

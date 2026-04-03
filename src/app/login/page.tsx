@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loginType, setLoginType] = useState<'petugas' | 'warga'>('petugas')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,13 +24,23 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) throw error
-      router.push(next)
+
+      // Redirect based on type if next is not specified
+      if (next === '/') {
+        if (loginType === 'petugas') {
+          router.push('/admin')
+        } else {
+          router.push('/riwayat')
+        }
+      } else {
+        router.push(next)
+      }
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -53,32 +64,65 @@ export default function LoginPage() {
             C
           </div>
           <h1 className="text-2xl font-black text-foreground uppercase tracking-tight mt-6">
-            Masuk Petugas
+            Masuk {loginType === 'petugas' ? 'Petugas' : 'Warga'}
           </h1>
           <p className="text-xs font-bold text-muted uppercase tracking-widest">
-            Dashboard Administrasi Cepuin
+            {loginType === 'petugas' ? 'Dashboard Administrasi Cepuin' : 'Pantau Riwayat Laporan Kamu'}
           </p>
+        </div>
+
+        {/* Login Type Switcher */}
+        <div className="flex bg-white p-1 rounded-2xl border border-border/50 shadow-sm">
+          <button
+            onClick={() => setLoginType('petugas')}
+            className={cn(
+              "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+              loginType === 'petugas' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted hover:text-foreground"
+            )}
+          >
+            Petugas
+          </button>
+          <button
+            onClick={() => setLoginType('warga')}
+            className={cn(
+              "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+              loginType === 'warga' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted hover:text-foreground"
+            )}
+          >
+            Warga
+          </button>
         </div>
 
         {/* Form */}
         <div className="bg-white p-8 rounded-[40px] shadow-2xl border border-border/50 space-y-6">
           <div className="flex items-center gap-3 p-4 bg-primary-light/30 rounded-2xl border border-primary/10">
-            <ShieldCheck className="w-5 h-5 text-primary" />
-            <p className="text-[10px] font-bold text-primary-dark uppercase leading-relaxed">
-              Khusus petugas pemerintah kota yang terdaftar.
-            </p>
+            {loginType === 'petugas' ? (
+              <>
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <p className="text-[10px] font-bold text-primary-dark uppercase leading-relaxed">
+                  Khusus petugas pemerintah kota yang terdaftar.
+                </p>
+              </>
+            ) : (
+              <>
+                <Mail className="w-5 h-5 text-primary" />
+                <p className="text-[10px] font-bold text-primary-dark uppercase leading-relaxed">
+                  Masuk untuk melihat status dan notifikasi laporan Anda.
+                </p>
+              </>
+            )}
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-2">Email Petugas</label>
+              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-2">Email {loginType === 'petugas' ? 'Petugas' : 'Kamu'}</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@cepuin.id"
+                  placeholder={loginType === 'petugas' ? "admin@cepuin.id" : "nama@email.com"}
                   required
                   className="w-full pl-12 pr-4 py-4 bg-muted-light/50 rounded-2xl border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-all text-sm font-bold text-foreground"
                 />
@@ -124,11 +168,19 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          
+          {loginType === 'warga' && (
+            <div className="text-center pt-2">
+              <p className="text-[10px] font-bold text-muted uppercase tracking-widest">
+                Belum punya akun? <Link href="/register" className="text-primary hover:underline">Daftar Di Sini</Link>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Help Footer */}
         <p className="text-[10px] text-center font-bold text-muted uppercase tracking-widest">
-          Lupa akses? Hubungi tim IT Pemerintah Kota.
+          {loginType === 'petugas' ? 'Lupa akses? Hubungi tim IT Pemerintah Kota.' : 'Masalah login? Hubungi bantuan@cepuin.id'}
         </p>
       </div>
     </main>

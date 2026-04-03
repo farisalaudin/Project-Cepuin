@@ -28,6 +28,7 @@ export default function AdminDashboard() {
   const [isUpdating, setIsUpdating] = useState(false)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all')
+  const [petugasName, setPetugasName] = useState('')
 
   const fetchReports = async () => {
     setIsLoading(true)
@@ -57,7 +58,11 @@ export default function AdminDashboard() {
     try {
       const { error } = await supabase
         .from('reports')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ 
+          status: newStatus, 
+          updated_at: new Date().toISOString(),
+          assigned_to: petugasName || null 
+        })
         .eq('id', id)
       
       if (error) throw error
@@ -68,10 +73,11 @@ export default function AdminDashboard() {
         old_status: selectedReport?.status,
         new_status: newStatus,
         changed_by: 'Admin', // In real app, get from user profile
-        note: `Status diubah menjadi ${newStatus}`
+        note: petugasName ? `Status diubah menjadi ${newStatus}. Petugas: ${petugasName}` : `Status diubah menjadi ${newStatus}`
       })
 
       setSelectedReport(null)
+      setPetugasName('')
       fetchReports()
     } catch (err) {
       alert('Gagal mengupdate status.')
@@ -337,29 +343,44 @@ export default function AdminDashboard() {
               <div className="p-8 bg-muted-light/30 rounded-[32px] border border-border space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-6 bg-primary rounded-full" />
-                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Update Status Penanganan</h3>
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest">Update Penanganan</h3>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {STATUSES.map(s => {
-                    const isCurrent = selectedReport.status === s.value
-                    return (
-                      <button
-                        key={s.value}
-                        onClick={() => handleUpdateStatus(selectedReport.id, s.value)}
-                        disabled={isUpdating || isCurrent}
-                        className={cn(
-                          "px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm",
-                          isCurrent 
-                            ? "opacity-50 cursor-default grayscale" 
-                            : "hover:scale-105 hover:shadow-lg"
-                        )}
-                        style={{ color: s.color, backgroundColor: s.bgColor, border: `2px solid ${isCurrent ? 'transparent' : s.color + '20'}` }}
-                      >
-                        {isCurrent ? `Status: ${s.label}` : `Set Ke ${s.label}`}
-                      </button>
-                    )
-                  })}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1 mb-2 block">
+                      Petugas Lapangan (Opsional)
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="Masukkan nama petugas..."
+                      value={petugasName}
+                      onChange={(e) => setPetugasName(e.target.value)}
+                      className="w-full px-4 py-3 bg-white rounded-2xl border border-border focus:border-primary focus:outline-none transition-all text-sm font-bold text-foreground"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {STATUSES.map(s => {
+                      const isCurrent = selectedReport.status === s.value
+                      return (
+                        <button
+                          key={s.value}
+                          onClick={() => handleUpdateStatus(selectedReport.id, s.value)}
+                          disabled={isUpdating || isCurrent}
+                          className={cn(
+                            "px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm",
+                            isCurrent 
+                              ? "opacity-50 cursor-default grayscale" 
+                              : "hover:scale-105 hover:shadow-lg"
+                          )}
+                          style={{ color: s.color, backgroundColor: s.bgColor, border: `2px solid ${isCurrent ? 'transparent' : s.color + '20'}` }}
+                        >
+                          {isCurrent ? `Status: ${s.label}` : `Set Ke ${s.label}`}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
                 
                 {isUpdating && (
