@@ -35,7 +35,24 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
       onLocationFound(latitude, longitude, addr)
     } catch (err) {
       console.error('Location detection error:', err)
-      setError('Gagal mendeteksi lokasi. Pastikan GPS aktif.')
+      // Try to use stored location as fallback
+      const storedLat = localStorage.getItem('defaultLat')
+      const storedLng = localStorage.getItem('defaultLng')
+      if (storedLat && storedLng) {
+        const lat = parseFloat(storedLat)
+        const lng = parseFloat(storedLng)
+        setCoords({ lat, lng })
+        try {
+          const addr = await reverseGeocode(lat, lng)
+          setAddress(addr)
+          onLocationFound(lat, lng, addr)
+          setError('Menggunakan lokasi tersimpan. Tekan refresh untuk lokasi terkini.')
+        } catch (geoErr) {
+          setError('Gagal mendeteksi lokasi. Pastikan GPS aktif.')
+        }
+      } else {
+        setError('Gagal mendeteksi lokasi. Pastikan GPS aktif.')
+      }
     } finally {
       setIsLoading(false)
     }
