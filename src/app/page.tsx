@@ -6,6 +6,7 @@ import Link from 'next/link'
 import NearbyFeed from '@/components/NearbyFeed'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
+import { getCurrentLocation } from '@/lib/geo'
 
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, resolved: 0, votes: 0 })
@@ -43,6 +44,17 @@ export default function Home() {
 
   useEffect(() => {
     fetchStats()
+  }, [])
+
+  // Request GPS permission on app load
+  useEffect(() => {
+    getCurrentLocation().then((coords) => {
+      // Store location in localStorage for fallback use
+      localStorage.setItem('defaultLat', coords.latitude.toString())
+      localStorage.setItem('defaultLng', coords.longitude.toString())
+    }).catch(() => {
+      // Ignore errors - permission denied or unavailable
+    })
   }, [])
 
   return (
