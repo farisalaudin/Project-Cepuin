@@ -29,6 +29,7 @@ export default function ReportForm() {
   const [location, setLocation] = useState<{ lat: number; lng: number; address: string } | null>(null)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submissionStatus, setSubmissionStatus] = useState<string>('')
   const [isSuccess, setIsSuccess] = useState(false)
   const [duplicates, setDuplicates] = useState<Report[]>([])
   const [reportId, setReportId] = useState<string>('')
@@ -67,6 +68,7 @@ export default function ReportForm() {
     if (!category || !location) return
 
     setIsSubmitting(true)
+    setSubmissionStatus('Menghubungkan ke sistem...')
     let newReport: Report | null = null
 
     try {
@@ -74,6 +76,7 @@ export default function ReportForm() {
       const { data: { user } } = await supabase.auth.getUser()
 
       // 1. Create initial report (to get ID)
+      setSubmissionStatus('Menyimpan data laporan...')
       const now = new Date().toISOString()
       const initialUrgency = calculateUrgencyScore(0, category as ReportCategory, now)
 
@@ -92,7 +95,14 @@ export default function ReportForm() {
       // 2. Upload photo if exists
       if (photo && newReport.id) {
         try {
+          setSubmissionStatus('Mengompres foto...')
+          // Delay sedikit agar user bisa baca statusnya (opsional untuk UX)
+          await new Promise(r => setTimeout(r, 500))
+          
+          setSubmissionStatus('Mengunggah foto ke server...')
           const photoUrl = await uploadReportPhoto(photo, newReport.id)
+          
+          setSubmissionStatus('Menyelesaikan laporan...')
           // Update report with photo URL
           const { error: updateError } = await supabase
             .from('reports')
@@ -109,6 +119,7 @@ export default function ReportForm() {
         }
       }
 
+      setSubmissionStatus('Selesai!')
       setReportId(newReport.id)
       setIsSuccess(true)
     } catch (err) {
@@ -231,48 +242,65 @@ export default function ReportForm() {
 
       {/* Description */}
       <div className="space-y-3">
-        <label className="text-sm font-semibold text-foreground">
+        <label className="text-[10px] font-black text-muted/60 uppercase tracking-widest ml-2">
           Detail Masalah (Opsional)
         </label>
-        <div className="relative">
+        <div className="relative group">
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value.slice(0, 280))}
             placeholder="Contoh: Lubang di tengah jalan, membahayakan pengendara motor..."
             rows={3}
-            className="w-full p-4 rounded-2xl border-2 border-border focus:border-primary focus:outline-none transition-all duration-200 text-sm resize-none bg-white shadow-sm"
+            className="w-full p-5 rounded-[28px] border-2 border-border/50 focus:border-primary focus:outline-none transition-all duration-300 text-sm resize-none bg-white/50 backdrop-blur-sm shadow-sm group-hover:border-primary/30"
           />
-          <div className="absolute bottom-3 right-3 text-[10px] font-medium text-muted">
+          <div className="absolute bottom-4 right-4 text-[10px] font-black text-muted/40 uppercase tracking-widest">
             {description.length}/280
           </div>
         </div>
       </div>
 
       {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={!category || !location || isSubmitting}
-        className={cn(
-          "w-full py-4 rounded-2xl font-bold text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2",
-          (!category || !location || isSubmitting)
-            ? "bg-muted cursor-not-allowed grayscale"
-            : duplicates.length > 0 
-              ? "bg-muted-dark hover:bg-foreground active:scale-95 shadow-muted/20"
-              : "bg-primary hover:bg-primary-dark active:scale-95 shadow-primary/20"
+      <div className="space-y-3">
+        {isSubmitting && (
+          <div className="w-full bg-muted-light rounded-full h-1.5 overflow-hidden">
+            <div 
+              className={cn(
+                "h-full bg-primary transition-all duration-500",
+                submissionStatus.includes('Menghubungkan') ? "w-[10%]" :
+                submissionStatus.includes('Menyimpan') ? "w-[30%]" :
+                submissionStatus.includes('Mengompres') ? "w-[50%]" :
+                submissionStatus.includes('Mengunggah') ? "w-[80%]" :
+                submissionStatus.includes('Selesai') ? "w-full" : "w-[90%]"
+              )} 
+            />
+          </div>
         )}
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Mengirim Laporan...
-          </>
-        ) : (
-          <>
-            <AlertTriangle className="w-5 h-5" />
-            {duplicates.length > 0 ? "Tetap Laporkan (Masalah Berbeda)" : "Laporkan Sekarang"}
-          </>
-        )}
-      </button>
+        
+        <button
+          type="submit"
+          disabled={!category || !location || isSubmitting}
+          className={cn(
+            "w-full py-4 rounded-2xl font-bold text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2",
+            (!category || !location || isSubmitting)
+              ? "bg-muted cursor-not-allowed grayscale"
+              : duplicates.length > 0 
+                ? "bg-muted-dark hover:bg-foreground active:scale-95 shadow-muted/20"
+                : "bg-primary hover:bg-primary-dark active:scale-95 shadow-primary/20"
+          )}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              {submissionStatus || "Mengirim Laporan..."}
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="w-5 h-5" />
+              {duplicates.length > 0 ? "Tetap Laporkan (Masalah Berbeda)" : "Laporkan Sekarang"}
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Disclaimer */}
       <div className="flex items-start gap-2 px-2 text-center">

@@ -41,7 +41,15 @@ export default function AdminDashboard() {
       
       const { data, error } = await query
       if (error) throw error
-      setReports(data as Report[])
+      
+      // Ensure data is properly typed and urgency_score is treated as number
+      const sanitizedData = (data as Report[]).map(report => ({
+        ...report,
+        urgency_score: Number(report.urgency_score) || 0,
+        vote_count: Number(report.vote_count) || 0
+      }))
+      
+      setReports(sanitizedData)
     } catch (err) {
       console.error('Fetch reports error:', err)
     } finally {
@@ -56,6 +64,9 @@ export default function AdminDashboard() {
   const handleUpdateStatus = async (id: string, newStatus: ReportStatus) => {
     setIsUpdating(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const adminEmail = user?.email || 'Admin'
+
       const { error } = await supabase
         .from('reports')
         .update({ 
@@ -72,8 +83,8 @@ export default function AdminDashboard() {
         report_id: id,
         old_status: selectedReport?.status,
         new_status: newStatus,
-        changed_by: 'Admin', // In real app, get from user profile
-        note: petugasName ? `Status diubah menjadi ${newStatus}. Petugas: ${petugasName}` : `Status diubah menjadi ${newStatus}`
+        changed_by: adminEmail,
+        note: petugasName ? `Petugas ditunjuk: ${petugasName}` : `Status diperbarui ke ${newStatus}`
       })
 
       setSelectedReport(null)
@@ -102,46 +113,46 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-border shadow-sm group hover:border-primary transition-all">
+        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-border shadow-sm group hover:border-primary transition-all">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary-light text-primary rounded-2xl group-hover:scale-110 transition-transform">
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Total Laporan</p>
+              <p className="text-[10px] font-black text-muted/60 uppercase tracking-widest">Total Laporan</p>
               <h3 className="text-2xl font-black text-foreground">{stats.total}</h3>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-border shadow-sm group hover:border-success transition-all">
+        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-border shadow-sm group hover:border-success transition-all">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-success-light text-success rounded-2xl group-hover:scale-110 transition-transform">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Terselesaikan</p>
+              <p className="text-[10px] font-black text-muted/60 uppercase tracking-widest">Terselesaikan</p>
               <h3 className="text-2xl font-black text-foreground">{stats.resolved}</h3>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-border shadow-sm group hover:border-accent transition-all">
+        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-border shadow-sm group hover:border-accent transition-all">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-accent-light text-accent rounded-2xl group-hover:scale-110 transition-transform">
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Laporan Baru</p>
+              <p className="text-[10px] font-black text-muted/60 uppercase tracking-widest">Laporan Baru</p>
               <h3 className="text-2xl font-black text-foreground">{stats.pending}</h3>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-border shadow-sm group hover:border-danger transition-all">
+        <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-border shadow-sm group hover:border-danger transition-all">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-danger-light text-danger rounded-2xl group-hover:scale-110 transition-transform">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Rata-rata Urgensi</p>
+              <p className="text-[10px] font-black text-muted/60 uppercase tracking-widest">Rata-rata Urgensi</p>
               <h3 className="text-2xl font-black text-foreground">{stats.avgUrgency}</h3>
             </div>
           </div>
@@ -149,26 +160,26 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Table Section */}
-      <div className="bg-white rounded-[32px] border border-border shadow-xl overflow-hidden">
+      <div className="bg-white/70 backdrop-blur-sm rounded-[32px] border border-border shadow-xl overflow-hidden">
         {/* Filters Header */}
         <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-muted-light/30">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted/60" />
             <input 
               type="text" 
               placeholder="Cari lokasi atau kategori..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white rounded-2xl border border-border focus:border-primary focus:outline-none transition-all text-sm font-medium"
+              className="w-full pl-10 pr-4 py-3 bg-white/50 rounded-2xl border border-border focus:border-primary focus:outline-none transition-all text-sm font-medium"
             />
           </div>
           
           <div className="flex items-center gap-3">
-            <Filter className="w-4 h-4 text-muted" />
+            <Filter className="w-4 h-4 text-muted/60" />
             <select 
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as ReportStatus | 'all')}
-              className="bg-white px-4 py-3 rounded-2xl border border-border text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+              className="bg-white/50 px-4 py-3 rounded-2xl border border-border text-xs font-bold text-foreground focus:border-primary focus:outline-none"
             >
               <option value="all">Semua Status</option>
               {STATUSES.map(s => (

@@ -1,103 +1,240 @@
-'use client'
+# AGENTS.md — Cepuin MVP
+> **Master Contract** — Baca file ini PERTAMA sebelum melakukan apapun.
+> Jika ada konflik antara file ini dan file lain, file ini yang menang.
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useEffect, useState } from 'react'
-import Image from 'next/image'
+---
 
-interface Report {
-  id: string
-  category: string
-  description: string
-  photo_url: string | null
-  address: string
-  status: string
-  vote_count: number
-  urgency_score: number
-  created_at: string
-}
+## Identitas Proyek
 
-export default function AdminPage() {
-  const supabase = createClientComponentClient()
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
+| | |
+|---|---|
+| **Nama App** | Cepuin |
+| **Tagline** | Laporan Cepat Tanggap, Penyelesaian Masalah di Jalan |
+| **Tipe** | Web app crowdsourced pelaporan infrastruktur kota |
+| **Target Launch** | 3–7 hari |
+| **Budget** | $0 — semua tools HARUS gratis |
+| **Status Aktif** | MVP Phase 1 |
 
-  useEffect(() => {
-    fetchReports()
-  }, [])
+---
 
-  const fetchReports = async () => {
-    const { data, error } = await supabase
-      .from('reports')
-      .select('id, category, description, photo_url, address, status, vote_count, urgency_score, created_at')
-      .order('created_at', { ascending: false })
+## Cara Berpikir yang Benar
 
-    if (error) {
-      console.error('Error fetching reports:', error)
-    } else {
-      setReports(data || [])
-    }
-    setLoading(false)
-  }
+Sebelum menulis satu baris kode pun, AI agent wajib:
 
-  const getPhotoUrl = (photoPath: string | null) => {
-    if (!photoPath) return null
-    
-    const { data } = supabase.storage
-      .from('reports')
-      .getPublicUrl(photoPath)
-    
-    return data.publicUrl
-  }
+1. **Pahami intent dulu** — Apa yang benar-benar dibutuhkan user, bukan yang tertulis harfiah
+2. **Tanya jika ragu** — Jika ada info yang kurang, tanya SATU pertanyaan spesifik
+3. **Plan dulu, baru code** — Ajukan rencana singkat, tunggu persetujuan, baru implement
+4. **Satu fitur satu waktu** — Selesaikan & test dulu, baru lanjut fitur berikutnya
+5. **Verifikasi setiap perubahan** — Cek tidak ada error sebelum lapor "selesai"
+6. **Jelaskan trade-off** — Jika ada pilihan teknis, sebutkan opsi & rekomendasinya
 
-  if (loading) return <div className="p-6">Loading...</div>
+---
 
-  return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Dashboard Admin</h1>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="border p-3 text-left">Foto</th>
-              <th className="border p-3 text-left">Kategori</th>
-              <th className="border p-3 text-left">Lokasi</th>
-              <th className="border p-3 text-left">Status</th>
-              <th className="border p-3 text-left">Vote</th>
-              <th className="border p-3 text-left">Urgensi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reports.map((report) => (
-              <tr key={report.id} className="hover:bg-gray-100">
-                <td className="border p-3">
-                  {report.photo_url ? (
-                    <div className="relative w-20 h-20">
-                      <Image
-                        src={getPhotoUrl(report.photo_url) || ''}
-                        alt={report.category}
-                        fill
-                        className="object-cover rounded"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-sm">Tidak ada foto</span>
-                  )}
-                </td>
-                <td className="border p-3">{report.category}</td>
-                <td className="border p-3 text-sm">{report.address}</td>
-                <td className="border p-3">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                    {report.status}
-                  </span>
-                </td>
-                <td className="border p-3 text-center">{report.vote_count}</td>
-                <td className="border p-3 text-center">{report.urgency_score.toFixed(1)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
+## Tech Stack (TIDAK BOLEH DIUBAH tanpa diskusi)
+
+| Layer | Tool | Alasan |
+|-------|------|--------|
+| **Frontend** | Next.js 14 (App Router) + Tailwind CSS | Vercel gratis, performa baik |
+| **Backend / DB** | Supabase (Postgres + Auth + Storage) | Free tier cukup, all-in-one |
+| **Maps** | Leaflet.js + OpenStreetMap | 100% gratis, no API key |
+| **Image Storage** | Supabase Storage | 1GB gratis |
+| **Hosting** | Vercel (deploy dari GitHub) | Auto-deploy, free |
+| **Analytics** | Google Analytics 4 | Gratis |
+| **Language** | TypeScript | Type safety, tangkap error lebih awal |
+
+> Detail stack lengkap -> lihat agent_docs/tech_stack.md
+
+---
+
+## Fitur MVP — Status Tracking
+
+Centang saat fitur selesai dan sudah ditest:
+
+### Phase 1: Foundation
+- [ ] Project setup (Next.js + Supabase + Tailwind)
+- [ ] Database schema lengkap
+- [ ] Auth: anonymous session + optional email login
+
+### Phase 2: Core Features (P0)
+- [ ] F1 — Form laporan (kategori, foto, GPS, deskripsi)
+- [ ] F2 — Validasi duplikat GPS (radius 50m)
+- [ ] F3 — Sistem vote "Ini juga saya alami" (1 user = 1 vote)
+- [ ] F4 — Feed laporan sekitar (radius 2km, load < 3 detik)
+- [ ] F5 — Skor urgensi otomatis (formula di bawah)
+- [ ] F6 — Dashboard admin (peta cluster + tabel + status workflow)
+
+### Phase 3: Enhancement (P1)
+- [ ] F7 — Cari lokasi manual (search + autocomplete)
+- [ ] Halaman detail laporan
+- [ ] Landing page (hero + CTA)
+- [ ] Mobile testing & responsiveness
+
+### Phase 4: Launch
+- [ ] GA4 terpasang
+- [ ] Beta test dengan 5-10 user
+- [ ] Deploy ke Vercel production
+
+> Detail setiap fitur -> lihat agent_docs/features.md
+
+---
+
+## Formula Skor Urgensi
+
+```
+urgency_score = (vote_count x 0.4) + (category_urgency x 0.4) + (time_decay x 0.2)
+```
+
+Category urgency values:
+- jalan_berlubang  : 90
+- lampu_mati       : 70
+- banjir           : 95
+- sampah_menumpuk  : 60
+- drainase_rusak   : 75
+- fasilitas_umum   : 55
+- lainnya          : 50
+
+Time decay (nilai 0-100, makin lama makin tinggi urgensinya):
+```
+time_decay = min(100, days_since_report x 3)
+```
+
+Final score: 0-100, diupdate setiap ada vote baru.
+
+---
+
+## Database Schema (Supabase Postgres)
+
+```sql
+-- REPORTS (laporan)
+CREATE TABLE reports (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID REFERENCES auth.users(id),
+  category      TEXT NOT NULL,
+  description   TEXT,
+  photo_url     TEXT,
+  lat           DECIMAL(10, 8) NOT NULL,
+  lng           DECIMAL(11, 8) NOT NULL,
+  address       TEXT,
+  status        TEXT DEFAULT 'dilaporkan',
+  urgency_score DECIMAL(5,2) DEFAULT 0,
+  vote_count    INT DEFAULT 0,
+  assigned_to   TEXT,
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  updated_at    TIMESTAMPTZ DEFAULT now()
+);
+
+-- VOTES (gabung laporan / upvote)
+CREATE TABLE votes (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id   UUID REFERENCES reports(id) ON DELETE CASCADE,
+  user_id     UUID,
+  session_id  TEXT,
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(report_id, user_id),
+  UNIQUE(report_id, session_id)
+);
+
+-- STATUS HISTORY (audit trail)
+CREATE TABLE status_history (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id   UUID REFERENCES reports(id) ON DELETE CASCADE,
+  old_status  TEXT,
+  new_status  TEXT,
+  changed_by  TEXT,
+  note        TEXT,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+## Status Workflow Laporan
+
+```
+Dilaporkan -> Diverifikasi -> Dikerjakan -> Selesai
+     |              |
+  Ditolak       Ditolak (duplikat/spam)
+```
+
+Aturan:
+- Hanya admin yang bisa ubah status
+- Setiap perubahan HARUS masuk status_history
+- Status "Ditolak" wajib ada catatan alasan
+
+---
+
+## Struktur Folder Project
+
+```
+cepuin/
+├── AGENTS.md                       <- File ini (baca pertama!)
+├── GEMINI.md                       <- Config Antigravity/Gemini
+├── agent_docs/
+│   ├── project_brief.md            <- Konteks produk lengkap
+│   ├── tech_stack.md               <- Setup & konfigurasi teknis
+│   └── features.md                 <- Spesifikasi detail fitur
+├── src/
+│   ├── app/
+│   │   ├── page.tsx                <- Landing page / home feed
+│   │   ├── lapor/page.tsx          <- Form laporan
+│   │   ├── laporan/[id]/page.tsx   <- Detail laporan
+│   │   └── admin/
+│   │       ├── page.tsx            <- Dashboard admin
+│   │       └── layout.tsx          <- Admin layout (auth guard)
+│   ├── components/
+│   │   ├── ui/                     <- Button, Card, Badge, dll
+│   │   ├── map/                    <- Komponen peta Leaflet
+│   │   ├── report/                 <- Form & card laporan
+│   │   └── admin/                  <- Komponen dashboard
+│   ├── lib/
+│   │   ├── supabase.ts             <- Supabase client
+│   │   ├── geo.ts                  <- Geolocation & proximity
+│   │   └── urgency.ts              <- Kalkulasi skor urgensi
+│   └── types/
+│       └── index.ts                <- TypeScript types
+├── .env.local                      <- Keys (JANGAN di-commit!)
+└── package.json
+```
+
+---
+
+## Larangan Keras (WAJIB DIPATUHI)
+
+- DILARANG hapus file tanpa konfirmasi eksplisit
+- DILARANG ubah database schema tanpa memberitahu user
+- DILARANG tambah fitur di luar phase aktif
+- DILARANG pakai tools/library berbayar
+- DILARANG skip testing mobile
+- DILARANG placeholder "Lorem ipsum" di production
+- DILARANG gunakan tipe `any` di TypeScript
+- DILARANG panggil database langsung dari route handlers
+- DILARANG commit jika ada error TypeScript atau ESLint
+
+---
+
+## Cara Memulai Setiap Sesi
+
+```
+1. Baca AGENTS.md (file ini)
+2. Baca agent_docs/ yang relevan
+3. Cek Phase mana yang sedang aktif
+4. Rangkum: "Saya akan [task]. Rencananya: [langkah]. Boleh saya mulai?"
+5. Tunggu persetujuan, baru implement
+```
+
+---
+
+## Perintah Berguna
+
+```bash
+npm install          # Setup awal
+npm run dev          # Start localhost:3000
+npm run lint         # Cek ESLint sebelum commit
+npm run type-check   # Cek TypeScript sebelum commit
+npm run build        # Test build sebelum deploy
+git push origin main # Deploy otomatis ke Vercel
+```
+
+---
+
+*AGENTS.md v1.0 — Cepuin MVP | Dibuat: 2 April 2026*

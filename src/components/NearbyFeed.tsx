@@ -74,9 +74,9 @@ export default function NearbyFeed() {
       <div className="flex items-center justify-between">
         <div className="flex flex-col flex-1 min-w-0 pr-4">
           <h2 className="text-xl font-black text-foreground tracking-tight flex items-center gap-2">
-            📍 <span className="truncate max-w-[200px]">{address}</span>
+            📍 <span className="truncate max-w-[200px] uppercase">{address}</span>
           </h2>
-          <p className="text-[10px] font-medium text-muted flex items-center gap-1">
+          <p className="text-[10px] font-black text-muted/60 uppercase tracking-widest flex items-center gap-1.5 mt-1">
             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
             Laporan dalam radius 2km
           </p>
@@ -84,7 +84,7 @@ export default function NearbyFeed() {
         <button
           onClick={() => fetchFeed(true)}
           disabled={isLoading}
-          className="p-2.5 rounded-xl bg-white border border-border text-muted hover:text-primary transition-all active:rotate-180 active:scale-95 disabled:opacity-50 shadow-sm"
+          className="p-3 rounded-2xl bg-white/50 backdrop-blur-sm border border-border text-muted hover:text-primary transition-all active:rotate-180 active:scale-95 disabled:opacity-50 shadow-sm hover:border-primary/30"
         >
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />

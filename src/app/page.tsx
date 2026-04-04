@@ -84,48 +84,50 @@ export default function Home() {
 
       {/* Stats Section */}
       <section className="px-8 -mt-8 relative z-20">
-        <div className="bg-white p-6 rounded-[32px] shadow-2xl shadow-primary/5 grid grid-cols-3 gap-4 border border-border/50 relative">
+        <div className="bg-white/70 backdrop-blur-xl p-6 rounded-[36px] shadow-2xl shadow-primary/10 grid grid-cols-3 gap-4 border border-white/50 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+          
           {/* Refresh Stats Button */}
           <button 
             onClick={fetchStats}
             disabled={isStatsLoading}
-            className="absolute -top-3 -right-3 p-2 bg-white border border-border rounded-full shadow-lg text-muted hover:text-primary transition-all active:rotate-180 disabled:opacity-50"
+            className="absolute -top-3 -right-3 p-2.5 bg-white/80 backdrop-blur-md border border-border rounded-full shadow-xl text-muted hover:text-primary transition-all active:rotate-180 disabled:opacity-50 z-10"
           >
-            <RefreshCw className={cn("w-3 h-3", isStatsLoading && "animate-spin")} />
+            <RefreshCw className={cn("w-3.5 h-3.5", isStatsLoading && "animate-spin")} />
           </button>
 
-          <div className="flex flex-col items-center justify-center space-y-1 group">
-            <div className="p-2.5 rounded-xl bg-primary-light/50 group-hover:bg-primary group-hover:text-white transition-colors">
+          <div className="flex flex-col items-center justify-center space-y-1.5 group relative z-10">
+            <div className="p-3 rounded-2xl bg-primary-light/50 group-hover:bg-primary group-hover:text-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20">
               <Navigation className="w-4 h-4 text-primary group-hover:text-white" />
             </div>
             {isStatsLoading ? (
-              <div className="h-7 w-8 bg-muted-light rounded animate-pulse mt-1" />
+              <div className="h-7 w-8 bg-muted-light/50 rounded-lg animate-pulse mt-1" />
             ) : (
-              <p className="text-xl font-black text-foreground">{stats.reports}</p>
+              <p className="text-xl font-black text-foreground tracking-tight">{stats.reports}</p>
             )}
-            <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Laporan</p>
+            <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em]">Laporan</p>
           </div>
-          <div className="flex flex-col items-center justify-center space-y-1 group border-x border-border/50 px-2">
-            <div className="p-2.5 rounded-xl bg-success-light/50 group-hover:bg-success group-hover:text-white transition-colors">
+          <div className="flex flex-col items-center justify-center space-y-1.5 group border-x border-border/30 px-2 relative z-10">
+            <div className="p-3 rounded-2xl bg-success-light/50 group-hover:bg-success group-hover:text-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-success/20">
               <CheckCircle2 className="w-4 h-4 text-success group-hover:text-white" />
             </div>
             {isStatsLoading ? (
-              <div className="h-7 w-8 bg-muted-light rounded animate-pulse mt-1" />
+              <div className="h-7 w-8 bg-muted-light/50 rounded-lg animate-pulse mt-1" />
             ) : (
-              <p className="text-xl font-black text-foreground">{stats.resolved}</p>
+              <p className="text-xl font-black text-foreground tracking-tight">{stats.resolved}</p>
             )}
-            <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Selesai</p>
+            <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em]">Selesai</p>
           </div>
-          <div className="flex flex-col items-center justify-center space-y-1 group">
-            <div className="p-2.5 rounded-xl bg-accent-light/50 group-hover:bg-accent group-hover:text-white transition-colors">
+          <div className="flex flex-col items-center justify-center space-y-1.5 group relative z-10">
+            <div className="p-3 rounded-2xl bg-accent-light/50 group-hover:bg-accent group-hover:text-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-accent/20">
               <ThumbsUp className="w-4 h-4 text-accent group-hover:text-white" />
             </div>
             {isStatsLoading ? (
-              <div className="h-7 w-8 bg-muted-light rounded animate-pulse mt-1" />
+              <div className="h-7 w-8 bg-muted-light/50 rounded-lg animate-pulse mt-1" />
             ) : (
-              <p className="text-xl font-black text-foreground">{stats.votes}</p>
+              <p className="text-xl font-black text-foreground tracking-tight">{stats.votes}</p>
             )}
-            <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Dukungan</p>
+            <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em]">Dukungan</p>
           </div>
         </div>
       </section>

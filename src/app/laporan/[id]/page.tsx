@@ -228,6 +228,19 @@ export default function LaporanDetailPage() {
             </div>
           )}
 
+          {/* Assigned To */}
+          {report.assigned_to && (
+            <div className="p-4 bg-primary-light/10 rounded-2xl border border-primary/10 flex items-center gap-4">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest">Petugas Lapangan</p>
+                <p className="text-sm font-bold text-foreground capitalize">{report.assigned_to}</p>
+              </div>
+            </div>
+          )}
+
           {/* Map Preview */}
           <div className="space-y-3">
             <h3 className="text-xs font-black text-muted uppercase tracking-widest ml-1">Titik Lokasi</h3>

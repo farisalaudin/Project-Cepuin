@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { MapPin, Loader2, RefreshCw, AlertCircle } from 'lucide-react'
-import { getCurrentLocation, reverseGeocode } from '@/lib/geo'
+import React, { useState, useEffect, useRef } from 'react'
+import { MapPin, Loader2, RefreshCw, AlertCircle, Search, X } from 'lucide-react'
+import { getCurrentLocation, reverseGeocode, searchLocation } from '@/lib/geo'
 import { cn } from '@/lib/cn'
 import dynamic from 'next/dynamic'
 
@@ -21,10 +21,19 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
   const [address, setAddress] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout>()
 
   const detectLocation = async () => {
     setIsLoading(true)
     setError(null)
+    setSearchQuery('')
+    setShowSearch(false)
     try {
       const pos = await getCurrentLocation()
       const { latitude, longitude } = pos
@@ -41,6 +50,41 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
     }
   }
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value
+    setSearchQuery(query)
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    if (query.length >= 3) {
+      setIsSearching(true)
+      searchTimeoutRef.current = setTimeout(async () => {
+        const results = await searchLocation(query)
+        setSearchResults(results)
+        setIsSearching(false)
+      }, 500)
+    } else {
+      setSearchResults([])
+      setIsSearching(false)
+    }
+  }
+
+  const handleSelectLocation = (result: any) => {
+    const lat = parseFloat(result.lat)
+    const lng = parseFloat(result.lon)
+    const addr = result.display_name
+
+    setCoords({ lat, lng })
+    setAddress(addr)
+    setSearchQuery('')
+    setSearchResults([])
+    setShowSearch(false)
+    setError(null)
+    onLocationFound(lat, lng, addr)
+  }
+
   // Detect location on mount
   useEffect(() => {
     detectLocation()
@@ -52,20 +96,69 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
         <label className="text-sm font-semibold text-foreground">
           Lokasi Kejadian <span className="text-danger">*</span>
         </label>
-        <button
-          type="button"
-          onClick={detectLocation}
-          disabled={isLoading}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline transition-all active:scale-95 disabled:opacity-50"
-        >
-          {isLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="w-3.5 h-3.5" />
-          )}
-          Perbarui Lokasi
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowSearch(!showSearch)}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline transition-all active:scale-95"
+          >
+            {showSearch ? (
+              <><X className="w-3.5 h-3.5" /> Tutup Cari</>
+            ) : (
+              <><Search className="w-3.5 h-3.5" /> Cari Lokasi</>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={detectLocation}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline transition-all active:scale-95 disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            GPS Otomatis
+          </button>
+        </div>
       </div>
+
+      {showSearch && (
+        <div className="relative animate-in slide-in-from-top-2 duration-200">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Cari jalan, kelurahan, atau kecamatan..."
+              className="w-full pl-10 pr-4 py-3 bg-white rounded-2xl border-2 border-primary/20 focus:border-primary focus:outline-none transition-all text-sm font-medium"
+            />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
+            )}
+          </div>
+
+          {searchResults.length > 0 && (
+            <div className="absolute z-50 mt-2 w-full bg-white rounded-2xl border-2 border-border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {searchResults.map((result, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelectLocation(result)}
+                  className="w-full px-4 py-3 text-left hover:bg-muted-light transition-colors flex items-start gap-3 border-b border-border last:border-0"
+                >
+                  <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <span className="text-xs font-medium text-foreground line-clamp-2">
+                    {result.display_name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className={cn(
         "p-4 rounded-2xl border-2 transition-all duration-300",

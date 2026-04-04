@@ -18,6 +18,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loginType, setLoginType] = useState<'petugas' | 'warga'>('petugas')
 
+  const ADMIN_EMAILS = ['admin@cepuin.id', 'test@admin.com'] // Hardcoded for MVP
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -31,15 +33,26 @@ export default function LoginPage() {
 
       if (error) throw error
 
+      const user = data.user
+      const isAdmin = ADMIN_EMAILS.includes(user?.email ?? '')
+
       // Redirect based on type if next is not specified
       if (next === '/') {
         if (loginType === 'petugas') {
+          if (!isAdmin) {
+            throw new Error('Akses ditolak. Email Anda tidak terdaftar sebagai petugas.')
+          }
           router.push('/admin')
         } else {
           router.push('/riwayat')
         }
       } else {
-        router.push(next)
+        // Prevent unauthorized access to admin via next param
+        if (next.startsWith('/admin') && !isAdmin) {
+          router.push('/riwayat')
+        } else {
+          router.push(next)
+        }
       }
     } catch (err) {
       setError((err as Error).message)
@@ -94,7 +107,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white p-8 rounded-[40px] shadow-2xl border border-border/50 space-y-6">
+        <div className="bg-white/80 backdrop-blur-md p-8 rounded-[40px] shadow-2xl border border-border/50 space-y-6">
           <div className="flex items-center gap-3 p-4 bg-primary-light/30 rounded-2xl border border-primary/10">
             {loginType === 'petugas' ? (
               <>
@@ -115,9 +128,9 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-2">Email {loginType === 'petugas' ? 'Petugas' : 'Kamu'}</label>
+              <label className="text-[10px] font-black text-muted/60 uppercase tracking-widest ml-2">Email {loginType === 'petugas' ? 'Petugas' : 'Kamu'}</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted/60" />
                 <input 
                   type="email" 
                   value={email}
@@ -130,9 +143,9 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-2">Kata Sandi</label>
+              <label className="text-[10px] font-black text-muted/60 uppercase tracking-widest ml-2">Kata Sandi</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted/60" />
                 <input 
                   type="password" 
                   value={password}
@@ -171,7 +184,7 @@ export default function LoginPage() {
           
           {loginType === 'warga' && (
             <div className="text-center pt-2">
-              <p className="text-[10px] font-bold text-muted uppercase tracking-widest">
+              <p className="text-[10px] font-bold text-muted/60 uppercase tracking-widest">
                 Belum punya akun? <Link href="/register" className="text-primary hover:underline">Daftar Di Sini</Link>
               </p>
             </div>
@@ -179,7 +192,7 @@ export default function LoginPage() {
         </div>
 
         {/* Help Footer */}
-        <p className="text-[10px] text-center font-bold text-muted uppercase tracking-widest">
+        <p className="text-[10px] text-center font-bold text-muted/60 uppercase tracking-widest">
           {loginType === 'petugas' ? 'Lupa akses? Hubungi tim IT Pemerintah Kota.' : 'Masalah login? Hubungi bantuan@cepuin.id'}
         </p>
       </div>

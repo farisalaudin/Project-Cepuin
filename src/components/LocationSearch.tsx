@@ -52,20 +52,20 @@ export default function LocationSearch({ onLocationSelect }: LocationSearchProps
   return (
     <div className="relative w-full" ref={searchRef}>
       <div className="relative group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted group-focus-within:text-primary transition-colors" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted/60 group-focus-within:text-primary transition-colors" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari lokasi lain (Kota, Jalan...)"
-          className="w-full pl-11 pr-10 py-3.5 bg-white rounded-2xl border border-border focus:border-primary focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all text-sm font-medium shadow-sm"
+          className="w-full pl-11 pr-10 py-4 bg-white/50 backdrop-blur-sm rounded-[24px] border border-border/50 focus:border-primary focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all text-sm font-bold shadow-sm placeholder:text-muted/40"
         />
         {query && (
           <button
             onClick={() => setQuery('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted-light rounded-full transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted-light/50 rounded-full transition-colors"
           >
-            <X className="w-4 h-4 text-muted" />
+            <X className="w-4 h-4 text-muted/60" />
           </button>
         )}
       </div>
