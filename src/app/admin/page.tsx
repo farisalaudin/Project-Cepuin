@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { 
   TrendingUp, 
   CheckCircle2, 
@@ -8,8 +8,6 @@ import {
   AlertTriangle, 
   Search, 
   Filter,
-  MoreVertical,
-  ChevronRight,
   ExternalLink,
   MapPin,
   ThumbsUp,
@@ -30,10 +28,10 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all')
   const [petugasName, setPetugasName] = useState('')
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     setIsLoading(true)
     try {
-      let query = supabase.from('reports').select('*').order('urgency_score', { ascending: false })
+      let query = supabase.from('reports').select('*, photo_url').order('urgency_score', { ascending: false })
       
       if (filterStatus !== 'all') {
         query = query.eq('status', filterStatus)
@@ -55,11 +53,11 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filterStatus])
 
   useEffect(() => {
     fetchReports()
-  }, [filterStatus])
+  }, [fetchReports])
 
   const handleUpdateStatus = async (id: string, newStatus: ReportStatus) => {
     setIsUpdating(true)
@@ -90,7 +88,7 @@ export default function AdminDashboard() {
       setSelectedReport(null)
       setPetugasName('')
       fetchReports()
-    } catch (err) {
+    } catch {
       alert('Gagal mengupdate status.')
     } finally {
       setIsUpdating(false)
@@ -110,7 +108,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="h-full flex flex-col gap-8">
       {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white/70 backdrop-blur-sm p-6 rounded-3xl border border-border shadow-sm group hover:border-primary transition-all">
@@ -160,7 +158,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Table Section */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-[32px] border border-border shadow-xl overflow-hidden">
+      <div className="bg-white/70 backdrop-blur-sm rounded-[32px] border border-border shadow-xl overflow-hidden flex flex-col flex-1 min-h-0">
         {/* Filters Header */}
         <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4 bg-muted-light/30">
           <div className="relative flex-1 max-w-md">
@@ -190,7 +188,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Table Body */}
-        <div className="overflow-x-auto">
+        <div className="flex-1 overflow-x-auto overflow-y-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="bg-muted-light/50 border-b border-border text-[10px] font-black text-muted uppercase tracking-[0.2em]">
@@ -344,7 +342,7 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-[10px] font-black text-muted uppercase tracking-widest mb-2">Deskripsi Warga</p>
                     <div className="p-4 bg-white rounded-2xl border-2 border-dashed border-border italic text-xs text-muted leading-relaxed">
-                      "{selectedReport.description || 'Tidak ada deskripsi tambahan.'}"
+                      &quot;{selectedReport.description || 'Tidak ada deskripsi tambahan.'}&quot;
                     </div>
                   </div>
                 </div>

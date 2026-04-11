@@ -25,7 +25,7 @@ export const findNearbyDuplicates = async (
 
   const { data, error } = await supabase
     .from('reports')
-    .select('*')
+    .select('*, photo_url')
     .eq('category', category)
     .not('status', 'in', '("selesai","ditolak")')
     .gte('lat', lat - RADIUS_DEGREES)
@@ -65,7 +65,7 @@ export const getNearbyReports = async (
 
   const { data, error } = await supabase
     .from('reports')
-    .select('*')
+    .select('*, photo_url')
     .gte('lat', lat - RADIUS_DEGREES)
     .lte('lat', lat + RADIUS_DEGREES)
     .gte('lng', lng - RADIUS_DEGREES)
@@ -94,7 +94,7 @@ export const getNearbyReports = async (
 export const getLatestReports = async (limit: number = 20): Promise<Report[]> => {
   const { data, error } = await supabase
     .from('reports')
-    .select('*')
+    .select('*, photo_url')
     .order('created_at', { ascending: false })
     .limit(limit)
 

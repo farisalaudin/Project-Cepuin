@@ -12,13 +12,13 @@ import { supabase } from './supabase'
  */
 export const uploadReportPhoto = async (file: File, reportId: string) => {
   // Compress before upload (target < 800KB)
-  const compressedFile = await compressImage(file, 800 * 1024)
+  const compressedFile = await compressImage(file)
 
   const extension = file.name.split('.').pop() || 'jpg'
   const fileName = `${reportId}/${Date.now()}.${extension}`
 
   const { error } = await supabase.storage
-    .from('report-photos')
+    .from('photos')
     .upload(fileName, compressedFile)
 
   if (error) {
@@ -27,7 +27,7 @@ export const uploadReportPhoto = async (file: File, reportId: string) => {
   }
 
   const { data: urlData } = supabase.storage
-    .from('report-photos')
+    .from('photos')
     .getPublicUrl(fileName)
 
   return urlData.publicUrl
@@ -37,7 +37,7 @@ export const uploadReportPhoto = async (file: File, reportId: string) => {
  * Simple client-side image compression using Canvas API.
  * Resizes image to max 1200px and reduces quality to 0.75.
  */
-const compressImage = (file: File, maxBytes: number): Promise<File> => {
+const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const canvas = document.createElement('canvas')

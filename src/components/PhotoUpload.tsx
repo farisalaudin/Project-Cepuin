@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import Image from 'next/image'
 import { Camera, Image as ImageIcon, X, Loader2 } from 'lucide-react'
-import { cn } from '@/lib/cn'
 
 interface PhotoUploadProps {
   onPhotoSelected: (file: File | null) => void
@@ -46,11 +46,12 @@ export default function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
 
       {preview ? (
         <div className="relative group w-full aspect-video rounded-2xl overflow-hidden border-2 border-primary shadow-lg">
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+          <Image
+              src={preview}
+              alt="Preview"
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
           <button
             type="button"
             onClick={removePhoto}

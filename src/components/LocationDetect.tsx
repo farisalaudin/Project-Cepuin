@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { MapPin, Loader2, RefreshCw, AlertCircle, Search, X } from 'lucide-react'
 import { getCurrentLocation, reverseGeocode, searchLocation } from '@/lib/geo'
 import { cn } from '@/lib/cn'
@@ -16,6 +16,12 @@ interface LocationDetectProps {
   onLocationFound: (lat: number, lng: number, address: string) => void
 }
 
+export interface SearchResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
+
 export default function LocationDetect({ onLocationFound }: LocationDetectProps) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [address, setAddress] = useState<string>('')
@@ -24,12 +30,12 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
-  const searchTimeoutRef = useRef<NodeJS.Timeout>()
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const detectLocation = async () => {
+  const detectLocation = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     setSearchQuery('')
@@ -44,11 +50,20 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
       onLocationFound(latitude, longitude, addr)
     } catch (err) {
       console.error('Location detection error:', err)
-      setError('Gagal mendeteksi lokasi. Pastikan GPS aktif.')
+      const geoError = err as GeolocationPositionError
+      if (geoError?.code === 1) {
+        setError('Izin lokasi ditolak. Mohon izinkan GPS di browser Anda.')
+      } else if (geoError?.code === 2) {
+        setError('Lokasi tidak tersedia. Pastikan perangkat Anda memiliki akses GPS.')
+      } else if (geoError?.code === 3) {
+        setError('Waktu deteksi lokasi habis. Coba lagi dengan sinyal yang lebih baik.')
+      } else {
+        setError('Gagal mendeteksi lokasi. Pastikan GPS aktif dan izinkan akses.')
+      }
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [onLocationFound])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value
@@ -71,7 +86,7 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
     }
   }
 
-  const handleSelectLocation = (result: any) => {
+  const handleSelectLocation = (result: SearchResult) => {
     const lat = parseFloat(result.lat)
     const lng = parseFloat(result.lon)
     const addr = result.display_name
@@ -88,6 +103,7 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
   // Detect location on mount
   useEffect(() => {
     detectLocation()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -123,6 +139,10 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
           </button>
         </div>
       </div>
+
+      <p className="text-[11px] text-muted leading-relaxed">
+        Browser akan meminta izin GPS secara otomatis saat halaman ini dimuat. Jika diminta, pilih &quot;Izinkan&quot; agar lokasi kejadian terisi otomatis.
+      </p>
 
       {showSearch && (
         <div className="relative animate-in slide-in-from-top-2 duration-200">

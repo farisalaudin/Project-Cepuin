@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { 
   ChevronLeft, 
@@ -9,15 +9,8 @@ import {
   ThumbsUp, 
   Clock, 
   AlertTriangle,
-  LightbulbOff,
-  CloudRain,
-  Trash2,
-  Droplets,
-  Building2,
-  MoreHorizontal,
   CheckCircle2,
   Loader2,
-  ArrowRight
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Report, StatusHistory, STATUSES, CATEGORIES } from '@/types'
@@ -37,7 +30,7 @@ export default function LaporanDetailPage() {
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
       const { data: reportData, error: reportError } = await supabase
@@ -61,11 +54,11 @@ export default function LaporanDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [id])
 
   useEffect(() => {
     fetchData()
-  }, [id])
+  }, [fetchData])
 
   const handleVote = async () => {
     if (!report || isVoting || hasVoted) return
@@ -223,7 +216,7 @@ export default function LaporanDetailPage() {
                 Keterangan Warga
               </div>
               <p className="text-sm text-foreground leading-relaxed italic">
-                "{report.description}"
+                &quot;{report.description}&quot;
               </p>
             </div>
           )}
@@ -263,7 +256,7 @@ export default function LaporanDetailPage() {
               </div>
 
               {/* history */}
-              {history.map((h, i) => (
+              {history.map((h) => (
                 <div key={h.id} className="relative">
                   <div className="absolute -left-[27px] top-1 w-4 h-4 rounded-full bg-border border-4 border-white shadow-sm z-10" />
                   <div className="space-y-1">
@@ -275,7 +268,7 @@ export default function LaporanDetailPage() {
                       </p>
                       <p className="text-[10px] font-bold text-muted italic">Oleh: {h.changed_by}</p>
                     </div>
-                    <p className="text-sm font-bold text-foreground capitalize">Update: {h.new_status}</p>
+                    <p className="text-sm font-bold text-foreground capitalize">Update: &quot;{h.new_status}&quot;</p>
                     {h.note && <p className="text-xs text-muted leading-relaxed">{h.note}</p>}
                   </div>
                 </div>

@@ -1,25 +1,22 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { MapPin, Loader2, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Loader2, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react'
 import { getCurrentLocation } from '@/lib/geo'
 import { getNearbyReports, getLatestReports } from '@/lib/reports'
 import { Report } from '@/types'
 import ReportCard from './ReportCard'
 import LocationSearch from './LocationSearch'
-import { cn } from '@/lib/cn'
 
 export default function NearbyFeed() {
   const [reports, setReports] = useState<Report[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [address, setAddress] = useState<string>('Sekitar Kamu')
   const [isFallback, setIsFallback] = useState(false)
 
-  const fetchFeed = async (forceLocation = false, manualCoords?: { lat: number; lng: number; address: string }) => {
+  const fetchFeed = useCallback(async (forceLocation = false, manualCoords?: { lat: number; lng: number; address: string }) => {
     setIsLoading(true)
-    setError(null)
     setIsFallback(false)
     try {
       let currentCoords = coords
@@ -40,7 +37,6 @@ export default function NearbyFeed() {
           setReports(data)
         } catch (geoErr) {
           console.warn('GPS failed, falling back to latest reports:', geoErr)
-          setError('GPS ditonaktifkan')
           setIsFallback(true)
           setAddress('Terbaru di Kotamu')
           const data = await getLatestReports()
@@ -52,14 +48,14 @@ export default function NearbyFeed() {
       }
     } catch (err) {
       console.error('Feed fetch error:', err)
-      setError('Gagal memuat laporan. Silakan coba lagi.')
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [coords])
 
   useEffect(() => {
     fetchFeed()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

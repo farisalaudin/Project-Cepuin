@@ -57,11 +57,13 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
   }
 }
 
+import { SearchResult } from '@/components/LocationDetect';
+
 /**
  * Search for a location by query.
  * Uses Nominatim OpenStreetMap (free, no API key).
  */
-export const searchLocation = async (query: string): Promise<any[]> => {
+export const searchLocation = async (query: string): Promise<SearchResult[]> => {
   if (!query || query.length < 3) return []
   
   try {

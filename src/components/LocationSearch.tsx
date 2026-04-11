@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Search, MapPin, Loader2, X } from 'lucide-react'
 import { searchLocation } from '@/lib/geo'
-import { cn } from '@/lib/cn'
+
+import { SearchResult } from './LocationDetect';
 
 interface LocationSearchProps {
   onLocationSelect: (lat: number, lng: number, address: string) => void
@@ -11,7 +12,7 @@ interface LocationSearchProps {
 
 export default function LocationSearch({ onLocationSelect }: LocationSearchProps) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<any[]>([])
+  const [results, setResults] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
@@ -43,7 +44,7 @@ export default function LocationSearch({ onLocationSelect }: LocationSearchProps
     return () => clearTimeout(delayDebounceFn)
   }, [query])
 
-  const handleSelect = (res: any) => {
+  const handleSelect = (res: SearchResult) => {
     onLocationSelect(parseFloat(res.lat), parseFloat(res.lon), res.display_name)
     setQuery('')
     setShowResults(false)

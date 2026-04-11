@@ -5,6 +5,7 @@ import { ChevronLeft, Info } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import ReportForm from '@/components/ReportForm'
 
+
 export default function LaporPage() {
   const router = useRouter()
 
@@ -46,7 +47,7 @@ export default function LaporPage() {
             Ayo Bantu <br /> Perbaiki <span className="text-accent">Kota Kita!</span>
           </h2>
           <p className="text-xs text-muted/80 font-bold uppercase tracking-wider leading-relaxed">
-            Laporkan masalah infrastruktur di sekitarmu dalam hitungan detik.
+            Laporkan masalah infrastruktur di sekitarmu dalam hitungan &quot;detik&quot;.
           </p>
         </div>
       </div>
@@ -59,7 +60,7 @@ export default function LaporPage() {
       {/* Footer Navigation (Mobile Style) */}
       <footer className="sticky bottom-0 p-5 bg-white/80 backdrop-blur-md border-t border-border flex justify-center">
         <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em] text-center leading-relaxed">
-          Bukan untuk keadaan darurat. <br /> Hubungi <span className="text-primary-dark">112</span> untuk Ambulans/Pemadam.
+          Bukan untuk keadaan darurat. <br /> Hubungi <span className="text-primary-dark">112</span> untuk Ambulans/Pemadam
         </p>
       </footer>
     </main>
