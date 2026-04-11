@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Mail, Lock, Loader2, ArrowLeft, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = searchParams.get('next') || '/'
@@ -184,8 +184,12 @@ export default function LoginPage() {
           
           {loginType === 'warga' && (
             <div className="text-center pt-2">
-              <p className="text-[10px] font-bold text-muted/60 uppercase tracking-widest">
-                Belum punya akun? <Link href="/register" className="text-primary hover:underline">Daftar Di Sini</Link>
+              <p className="text-[10px] font-bold text-muted/60 uppercase tracking-widest leading-relaxed">
+                Tidak wajib login untuk melapor.
+                {' '}
+                <Link href="/lapor" className="text-primary hover:underline">
+                  Kirim laporan cepat dari beranda
+                </Link>
               </p>
             </div>
           )}
@@ -197,5 +201,24 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  )
+}
+
+function LoginPageFallback() {
+  return (
+    <main className="min-h-screen bg-muted-light flex flex-col items-center justify-center p-6">
+      <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+      <p className="text-xs font-bold text-muted uppercase tracking-widest">
+        Memuat Halaman Login...
+      </p>
+    </main>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   )
 }

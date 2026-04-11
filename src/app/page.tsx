@@ -1,11 +1,19 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { MapPin, AlertTriangle, ArrowRight, ThumbsUp, CheckCircle2, Navigation, RefreshCw } from "lucide-react"
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import {
+  ArrowRight,
+  Camera,
+  FilePlus2,
+  History,
+  MapPin,
+  RefreshCw,
+  ShieldCheck,
+  ThumbsUp,
+} from 'lucide-react'
 import NearbyFeed from '@/components/NearbyFeed'
 import { supabase } from '@/lib/supabase'
-import { cn } from '@/lib/cn'
 
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, resolved: 0, votes: 0 })
@@ -17,25 +25,26 @@ export default function Home() {
       const { count: reportCount } = await supabase
         .from('reports')
         .select('*', { count: 'exact', head: true })
-      
+
       const { count: resolvedCount } = await supabase
         .from('reports')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'selesai')
-      
+
       const { data: voteData } = await supabase
         .from('reports')
         .select('vote_count')
-      
-      const totalVotes = voteData?.reduce((acc, r) => acc + (r.vote_count || 0), 0) || 0
+
+      const totalVotes =
+        voteData?.reduce((total, report) => total + (report.vote_count || 0), 0) || 0
 
       setStats({
         reports: reportCount || 0,
         resolved: resolvedCount || 0,
-        votes: totalVotes
+        votes: totalVotes,
       })
-    } catch (err) {
-      console.error('Stats fetch error:', err)
+    } catch (error) {
+      console.error('Stats fetch error:', error)
     } finally {
       setIsStatsLoading(false)
     }
@@ -46,114 +55,196 @@ export default function Home() {
   }, [])
 
   return (
-    <main className="flex flex-col min-h-screen max-w-lg mx-auto bg-background shadow-2xl">
-      {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center px-8 py-20 text-center bg-gradient-to-br from-primary via-primary-dark to-[#1e3a8a] overflow-hidden rounded-b-[48px] shadow-xl">
-        {/* Decorative elements */}
-        <div className="absolute top-[-40px] right-[-40px] w-64 h-64 rounded-full bg-white/5 blur-3xl animate-pulse" />
-        <div className="absolute bottom-[-20px] left-[-20px] w-48 h-48 rounded-full bg-accent/10 blur-2xl" />
+    <main className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col bg-background/90 pb-28 shadow-[0_40px_140px_-60px_rgba(15,23,42,0.45)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(234,88,12,0.18),_transparent_55%)]" />
 
-        <div className="relative z-10 max-w-sm mx-auto space-y-8 animate-in slide-in-from-bottom-8 duration-700">
-          <div className="flex items-center justify-center w-20 h-20 mx-auto rounded-3xl bg-white/10 backdrop-blur-md shadow-2xl border border-white/20">
-            <MapPin className="w-10 h-10 text-white" />
-          </div>
-
-          <div className="space-y-4">
-            <h1 className="text-4xl font-black text-white tracking-tight leading-tight">
-              Cepu-in <br />
-              <span className="text-accent text-3xl font-extrabold italic">Infrastruktur Kotamu</span>
-            </h1>
-            <p className="text-sm text-blue-100/80 max-w-[280px] mx-auto leading-relaxed font-medium">
-              Laporkan jalan berlubang, lampu mati, atau banjir dalam <span className="text-accent-light font-bold">60 detik</span>. Tanpa daftar, langsung berdampak.
+      <header className="sticky top-0 z-40 border-b border-white/50 bg-white/75 px-5 py-4 backdrop-blur-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+              Cepuin
             </p>
+            <h1 className="mt-1 text-base font-black tracking-tight text-foreground">
+              Dashboard Lapor Cepat
+            </h1>
           </div>
-
-          <div className="flex flex-col items-center gap-4 pt-4">
-            <Link
-              href="/lapor"
-              className="group relative w-full inline-flex items-center justify-center gap-3 px-8 py-4 text-sm font-black text-primary-dark bg-white rounded-2xl shadow-2xl shadow-black/20 hover:bg-blue-50 transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              <AlertTriangle className="w-5 h-5 text-primary" />
-              Laporin Sekarang
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="px-8 -mt-8 relative z-20">
-        <div className="bg-white/70 backdrop-blur-xl p-6 rounded-[36px] shadow-2xl shadow-primary/10 grid grid-cols-3 gap-4 border border-white/50 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
-          
-          {/* Refresh Stats Button */}
-          <button 
-            onClick={fetchStats}
-            disabled={isStatsLoading}
-            className="absolute -top-3 -right-3 p-2.5 bg-white/80 backdrop-blur-md border border-border rounded-full shadow-xl text-muted hover:text-primary transition-all active:rotate-180 disabled:opacity-50 z-10"
+          <Link
+            href="/login"
+            className="rounded-full border border-border bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted shadow-sm transition hover:border-primary hover:text-primary"
           >
-            <RefreshCw className={cn("w-3.5 h-3.5", isStatsLoading && "animate-spin")} />
-          </button>
+            Masuk
+          </Link>
+        </div>
+      </header>
 
-          <div className="flex flex-col items-center justify-center space-y-1.5 group relative z-10">
-            <div className="p-3 rounded-2xl bg-primary-light/50 group-hover:bg-primary group-hover:text-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-primary/20">
-              <Navigation className="w-4 h-4 text-primary group-hover:text-white" />
+      <section className="px-5 pt-5">
+        <div className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(145deg,#115e59_0%,#0f766e_55%,#0b4c49_100%)] px-5 pb-6 pt-5 text-white shadow-[0_32px_70px_-36px_rgba(15,118,110,0.85)]">
+          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-14 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full bg-accent/20 blur-3xl" />
+
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/90">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Fokus utama: lapor dulu
             </div>
-            {isStatsLoading ? (
-              <div className="h-7 w-8 bg-muted-light/50 rounded-lg animate-pulse mt-1" />
-            ) : (
-              <p className="text-xl font-black text-foreground tracking-tight">{stats.reports}</p>
-            )}
-            <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em]">Laporan</p>
-          </div>
-          <div className="flex flex-col items-center justify-center space-y-1.5 group border-x border-border/30 px-2 relative z-10">
-            <div className="p-3 rounded-2xl bg-success-light/50 group-hover:bg-success group-hover:text-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-success/20">
-              <CheckCircle2 className="w-4 h-4 text-success group-hover:text-white" />
+
+            <h2 className="mt-4 max-w-xs text-3xl font-black leading-[1.05] tracking-tight">
+              Buka aplikasi, langsung tekan <span className="text-accent-light">Lapor</span>.
+            </h2>
+
+            <p className="mt-3 max-w-sm text-sm font-medium leading-relaxed text-white/78">
+              Buat pengalaman smartphone yang benar-benar cepat: pilih kategori, ambil lokasi,
+              tambah foto kalau perlu, lalu kirim.
+            </p>
+
+            <div className="mt-5 grid grid-cols-3 gap-2.5 text-left">
+              <div className="rounded-2xl border border-white/12 bg-white/10 p-3">
+                <MapPin className="h-4 w-4 text-accent-light" />
+                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                  GPS
+                </p>
+                <p className="mt-1 text-xs font-semibold text-white">Deteksi cepat</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-white/10 p-3">
+                <Camera className="h-4 w-4 text-accent-light" />
+                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                  Foto
+                </p>
+                <p className="mt-1 text-xs font-semibold text-white">Opsional tapi berguna</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-white/10 p-3">
+                <FilePlus2 className="h-4 w-4 text-accent-light" />
+                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                  Form
+                </p>
+                <p className="mt-1 text-xs font-semibold text-white">Singkat dan jelas</p>
+              </div>
             </div>
-            {isStatsLoading ? (
-              <div className="h-7 w-8 bg-muted-light/50 rounded-lg animate-pulse mt-1" />
-            ) : (
-              <p className="text-xl font-black text-foreground tracking-tight">{stats.resolved}</p>
-            )}
-            <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em]">Selesai</p>
-          </div>
-          <div className="flex flex-col items-center justify-center space-y-1.5 group relative z-10">
-            <div className="p-3 rounded-2xl bg-accent-light/50 group-hover:bg-accent group-hover:text-white transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-accent/20">
-              <ThumbsUp className="w-4 h-4 text-accent group-hover:text-white" />
+
+            <div className="mt-5 space-y-3">
+              <Link
+                href="/lapor"
+                className="flex w-full items-center justify-center gap-3 rounded-[24px] bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-primary-dark shadow-2xl shadow-black/20 transition hover:-translate-y-0.5"
+              >
+                Lapor Sekarang
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Link
+                  href="#feed"
+                  className="rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-white/15"
+                >
+                  Lihat Sekitar
+                </Link>
+                <Link
+                  href="/riwayat"
+                  className="rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-white/15"
+                >
+                  Riwayat Saya
+                </Link>
+              </div>
             </div>
-            {isStatsLoading ? (
-              <div className="h-7 w-8 bg-muted-light/50 rounded-lg animate-pulse mt-1" />
-            ) : (
-              <p className="text-xl font-black text-foreground tracking-tight">{stats.votes}</p>
-            )}
-            <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em]">Dukungan</p>
           </div>
         </div>
       </section>
 
-      {/* Feed Section */}
-      <section className="flex-1 px-8 py-10 bg-background">
-        <NearbyFeed />
+      <section className="px-5 pt-5">
+        <div className="rounded-[28px] border border-white/60 bg-white/78 p-5 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.35)] backdrop-blur-xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/70">
+                Ringkasan Kota
+              </p>
+              <h3 className="mt-1 text-lg font-black tracking-tight text-foreground">
+                Pantau dampak laporan warga
+              </h3>
+            </div>
+            <button
+              onClick={fetchStats}
+              disabled={isStatsLoading}
+              className="rounded-full border border-border bg-white p-2.5 text-muted shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-60"
+              aria-label="Muat ulang statistik"
+            >
+              <RefreshCw className={`h-4 w-4 ${isStatsLoading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="rounded-[24px] bg-primary-light/60 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary/70">
+                Laporan
+              </p>
+              <p className="mt-2 text-2xl font-black tracking-tight text-primary-dark">
+                {isStatsLoading ? '...' : stats.reports}
+              </p>
+            </div>
+            <div className="rounded-[24px] bg-success-light/70 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-success/70">
+                Selesai
+              </p>
+              <p className="mt-2 text-2xl font-black tracking-tight text-success">
+                {isStatsLoading ? '...' : stats.resolved}
+              </p>
+            </div>
+            <div className="rounded-[24px] bg-accent-light/65 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-accent-dark/70">
+                Dukungan
+              </p>
+              <p className="mt-2 text-2xl font-black tracking-tight text-accent-dark">
+                {isStatsLoading ? '...' : stats.votes}
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-8 py-8 text-center bg-white border-t border-border/50">
-        <p className="text-[10px] font-bold text-muted/60 uppercase tracking-[0.2em]">
-          © 2026 Cepuin — Transparansi Pembangunan Kota
-        </p>
-      </footer>
+      <section id="feed" className="flex-1 px-5 pb-8 pt-5">
+        <div className="rounded-[32px] border border-white/60 bg-white/72 px-4 py-5 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.38)] backdrop-blur-xl">
+          <div className="mb-5 flex items-start justify-between gap-4 px-1">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/70">
+                Area Sekitar
+              </p>
+              <h3 className="mt-1 text-lg font-black tracking-tight text-foreground">
+                Masalah yang butuh perhatian
+              </h3>
+            </div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-danger-light/60 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-danger">
+              <ThumbsUp className="h-3.5 w-3.5" />
+              Vote aktif
+            </div>
+          </div>
 
-      {/* Floating Action Button (FAB) */}
-      <Link
-        href="/lapor"
-        className="fixed bottom-8 right-6 z-50 p-5 bg-primary text-white rounded-3xl shadow-2xl shadow-primary/40 hover:bg-primary-dark hover:scale-110 active:scale-95 transition-all duration-300 md:right-[calc(50%-220px)]"
-      >
-        <div className="relative">
-          <AlertTriangle className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-primary animate-ping" />
+          <NearbyFeed />
         </div>
-      </Link>
+      </section>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg px-4 pb-4">
+        <div className="grid grid-cols-[0.95fr_1.25fr_0.95fr] gap-3 rounded-[30px] border border-white/70 bg-white/86 p-3 shadow-[0_28px_90px_-36px_rgba(15,23,42,0.5)] backdrop-blur-2xl">
+          <Link
+            href="/"
+            className="flex flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary"
+          >
+            <MapPin className="h-4 w-4" />
+            Beranda
+          </Link>
+          <Link
+            href="/lapor"
+            className="flex items-center justify-center gap-2 rounded-[24px] bg-accent px-4 py-4 text-xs font-black uppercase tracking-[0.24em] text-white shadow-[0_20px_40px_-20px_rgba(234,88,12,0.85)] transition hover:-translate-y-0.5"
+          >
+            <FilePlus2 className="h-4 w-4" />
+            Lapor
+          </Link>
+          <Link
+            href="/riwayat"
+            className="flex flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted"
+          >
+            <History className="h-4 w-4" />
+            Riwayat
+          </Link>
+        </div>
+      </div>
     </main>
-  );
+  )
 }

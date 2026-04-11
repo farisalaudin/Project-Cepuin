@@ -6,51 +6,55 @@
 
 @theme inline {
   /* Fonts */
-  --font-sans: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-sora), 'Segoe UI', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
-  /* Primary — Trust, Government blue */
-  --color-primary: #2563EB;
-  --color-primary-light: #DBEAFE;
-  --color-primary-dark: #1D4ED8;
+  /* Primary — Civic teal */
+  --color-primary: #0f766e;
+  --color-primary-light: #ccfbf1;
+  --color-primary-dark: #115e59;
 
-  /* Accent — Urgent, Warning amber */
-  --color-accent: #F59E0B;
-  --color-accent-light: #FEF3C7;
+  /* Accent — Fast action orange */
+  --color-accent: #ea580c;
+  --color-accent-light: #fed7aa;
+  --color-accent-dark: #c2410c;
 
   /* Semantic colors */
-  --color-success: #10B981;
-  --color-success-light: #D1FAE5;
-  --color-danger: #EF4444;
-  --color-danger-light: #FEE2E2;
-  --color-orange: #F97316;
-  --color-orange-light: #FFEDD5;
+  --color-success: #16a34a;
+  --color-success-light: #dcfce7;
+  --color-danger: #dc2626;
+  --color-danger-light: #fee2e2;
+  --color-orange: #f97316;
+  --color-orange-light: #ffedd5;
 
   /* Neutral */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-muted: #6B7280;
-  --color-muted-light: #F3F4F6;
-  --color-border: #E5E7EB;
+  --color-muted: #64748b;
+  --color-muted-light: #f1f5f9;
+  --color-border: #dbe4eb;
 }
 
 /* Light mode */
 :root {
-  --background: #FAFBFC;
-  --foreground: #111827;
+  --background: #fffdf8;
+  --foreground: #172033;
 }
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0F172A;
-    --foreground: #F1F5F9;
+    --background: #0f172a;
+    --foreground: #f8fafc;
   }
 }
 
 /* Base body styles */
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgb(15 118 110 / 0.14), transparent 28%),
+    linear-gradient(180deg, #fff7ee 0%, var(--background) 24%, #f4fbfa 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -66,6 +70,11 @@ html {
 *:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+::selection {
+  background: rgb(15 118 110 / 0.18);
+  color: var(--foreground);
 }
 
 /* Custom scrollbar */
