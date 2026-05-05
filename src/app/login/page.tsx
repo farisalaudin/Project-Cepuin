@@ -1,59 +1,84 @@
 'use client'
 
-import React, { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
-import { Mail, Lock, Loader2, ArrowLeft, ShieldCheck } from 'lucide-react'
+import React, { Suspense, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ArrowLeft, Loader2, Lock, Mail, UserPlus } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
+import { ensureUserProfile } from '@/lib/profiles'
 import { cn } from '@/lib/cn'
+
+const ADMIN_EMAILS = ['admin@cepuin.id', 'test@admin.com']
+
+type AuthMode = 'login' | 'register'
 
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next') || '/'
+  const next = searchParams.get('next') || '/riwayat'
 
+  const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [loginType, setLoginType] = useState<'petugas' | 'warga'>('petugas')
 
-  const ADMIN_EMAILS = ['admin@cepuin.id', 'test@admin.com'] // Hardcoded for MVP
+  const isAdminPath = useMemo(() => next.startsWith('/admin'), [next])
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setMessage(null)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      if (mode === 'register') {
+        if (username.trim().length < 3) {
+          throw new Error('Username minimal 3 karakter.')
+        }
+
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        })
+
+        if (signUpError) throw signUpError
+
+        if (data.session?.user?.id) {
+          await ensureUserProfile(data.session.user.id, data.session.user.email, username)
+        }
+
+        setMessage('Akun berhasil dibuat. Silakan login untuk melanjutkan.')
+        setMode('login')
+        return
+      }
+
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) throw error
+      if (signInError) throw signInError
+      if (!data.user) throw new Error('Gagal memuat data pengguna.')
 
-      const user = data.user
-      const isAdmin = ADMIN_EMAILS.includes(user?.email ?? '')
-
-      // Redirect based on type if next is not specified
-      if (next === '/') {
-        if (loginType === 'petugas') {
-          if (!isAdmin) {
-            throw new Error('Akses ditolak. Email Anda tidak terdaftar sebagai petugas.')
-          }
-          router.push('/admin')
-        } else {
-          router.push('/riwayat')
-        }
-      } else {
-        // Prevent unauthorized access to admin via next param
-        if (next.startsWith('/admin') && !isAdmin) {
-          router.push('/riwayat')
-        } else {
-          router.push(next)
-        }
+      try {
+        await ensureUserProfile(data.user.id, data.user.email)
+      } catch (profileErr) {
+        console.warn('Profile sync warning:', profileErr)
       }
+
+      const isAdmin = ADMIN_EMAILS.includes(data.user.email ?? '')
+      if (isAdminPath) {
+        if (!isAdmin) {
+          throw new Error('Akses admin ditolak untuk akun ini.')
+        }
+        router.push('/admin')
+        return
+      }
+
+      router.push(next)
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -62,103 +87,114 @@ function LoginPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-muted-light flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-500">
-        {/* Logo/Header */}
-        <div className="text-center space-y-2">
-          <Link 
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 sm:px-6 lg:flex-row lg:items-center lg:gap-10 lg:px-10">
+        <section className="mb-8 rounded-[30px] bg-[linear-gradient(145deg,#115e59_0%,#0f766e_55%,#0b4c49_100%)] p-6 text-white shadow-[0_30px_90px_-45px_rgba(15,118,110,0.88)] lg:mb-0 lg:flex-1 lg:p-10">
+          <Link
             href="/"
-            className="inline-flex items-center gap-2 p-3 bg-white rounded-2xl shadow-sm text-muted hover:text-primary transition-all active:scale-95 mb-4"
+            className="mb-6 inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/90"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Kembali</span>
+            <ArrowLeft className="h-4 w-4" />
+            Kembali
           </Link>
-          <div className="w-20 h-20 bg-primary rounded-[32px] flex items-center justify-center text-white font-black text-3xl mx-auto shadow-2xl shadow-primary/20">
-            C
-          </div>
-          <h1 className="text-2xl font-black text-foreground uppercase tracking-tight mt-6">
-            Masuk {loginType === 'petugas' ? 'Petugas' : 'Warga'}
+          <h1 className="text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+            Akun Warga Cepuin
           </h1>
-          <p className="text-xs font-bold text-muted uppercase tracking-widest">
-            {loginType === 'petugas' ? 'Dashboard Administrasi Cepuin' : 'Pantau Riwayat Laporan Kamu'}
+          <p className="mt-3 max-w-md text-sm font-medium leading-relaxed text-white/85 sm:text-base">
+            Masuk untuk memantau riwayat laporan, dukungan warga, dan perkembangan penanganan.
           </p>
-        </div>
+          <div className="mt-6 grid grid-cols-1 gap-3 text-xs font-bold uppercase tracking-wider text-white/90 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/25 bg-white/10 px-3 py-3">Pantau Status</div>
+            <div className="rounded-2xl border border-white/25 bg-white/10 px-3 py-3">Riwayat Aman</div>
+            <div className="rounded-2xl border border-white/25 bg-white/10 px-3 py-3">Akun Personal</div>
+          </div>
+        </section>
 
-        {/* Login Type Switcher */}
-        <div className="flex bg-white p-1 rounded-2xl border border-border/50 shadow-sm">
-          <button
-            onClick={() => setLoginType('petugas')}
-            className={cn(
-              "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
-              loginType === 'petugas' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted hover:text-foreground"
-            )}
-          >
-            Petugas
-          </button>
-          <button
-            onClick={() => setLoginType('warga')}
-            className={cn(
-              "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
-              loginType === 'warga' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted hover:text-foreground"
-            )}
-          >
-            Warga
-          </button>
-        </div>
-
-        {/* Form */}
-        <div className="bg-white/80 backdrop-blur-md p-8 rounded-[40px] shadow-2xl border border-border/50 space-y-6">
-          <div className="flex items-center gap-3 p-4 bg-primary-light/30 rounded-2xl border border-primary/10">
-            {loginType === 'petugas' ? (
-              <>
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                <p className="text-[10px] font-bold text-primary-dark uppercase leading-relaxed">
-                  Khusus petugas pemerintah kota yang terdaftar.
-                </p>
-              </>
-            ) : (
-              <>
-                <Mail className="w-5 h-5 text-primary" />
-                <p className="text-[10px] font-bold text-primary-dark uppercase leading-relaxed">
-                  Masuk untuk melihat status dan notifikasi laporan Anda.
-                </p>
-              </>
-            )}
+        <section className="rounded-[30px] border border-border bg-white p-5 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] sm:p-6 lg:w-[440px] lg:flex-shrink-0">
+          <div className="mb-5 flex rounded-2xl border border-border bg-muted-light/50 p-1">
+            <button
+              type="button"
+              onClick={() => setMode('login')}
+              className={cn(
+                'flex-1 rounded-xl py-2.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all',
+                mode === 'login' ? 'bg-primary text-white' : 'text-muted hover:text-foreground'
+              )}
+            >
+              Masuk
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('register')}
+              className={cn(
+                'flex-1 rounded-xl py-2.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all',
+                mode === 'register' ? 'bg-primary text-white' : 'text-muted hover:text-foreground'
+              )}
+            >
+              Daftar
+            </button>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted/60 uppercase tracking-widest ml-2">Email {loginType === 'petugas' ? 'Petugas' : 'Kamu'}</label>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === 'register' && (
+              <div className="space-y-1.5">
+                <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted/70">
+                  Username Warga
+                </label>
+                <div className="relative">
+                  <UserPlus className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/60" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="contoh: warga_malang"
+                    required
+                    className="w-full rounded-2xl border border-border bg-muted-light/50 py-3 pl-10 pr-4 text-sm font-semibold text-foreground outline-none transition-all focus:border-primary"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted/70">
+                Email
+              </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted/60" />
-                <input 
-                  type="email" 
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/60" />
+                <input
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={loginType === 'petugas' ? "admin@cepuin.id" : "nama@email.com"}
+                  placeholder="nama@email.com"
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-muted-light/50 rounded-2xl border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-all text-sm font-bold text-foreground"
+                  className="w-full rounded-2xl border border-border bg-muted-light/50 py-3 pl-10 pr-4 text-sm font-semibold text-foreground outline-none transition-all focus:border-primary"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted/60 uppercase tracking-widest ml-2">Kata Sandi</label>
+            <div className="space-y-1.5">
+              <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-muted/70">
+                Kata Sandi
+              </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted/60" />
-                <input 
-                  type="password" 
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted/60" />
+                <input
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-12 pr-4 py-4 bg-muted-light/50 rounded-2xl border border-transparent focus:border-primary focus:bg-white focus:outline-none transition-all text-sm font-bold text-foreground"
+                  className="w-full rounded-2xl border border-border bg-muted-light/50 py-3 pl-10 pr-4 text-sm font-semibold text-foreground outline-none transition-all focus:border-primary"
                 />
               </div>
             </div>
 
+            {message && (
+              <div className="rounded-2xl border border-success/25 bg-success-light/60 px-4 py-3 text-xs font-bold text-success">
+                {message}
+              </div>
+            )}
             {error && (
-              <div className="p-4 bg-danger-light/50 border border-danger/20 rounded-2xl text-[10px] font-bold text-danger uppercase text-center animate-in shake duration-300">
+              <div className="rounded-2xl border border-danger/25 bg-danger-light/60 px-4 py-3 text-xs font-bold text-danger">
                 {error}
               </div>
             )}
@@ -166,39 +202,17 @@ function LoginPageContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className={cn(
-                "w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-white transition-all duration-300 shadow-xl flex items-center justify-center gap-2",
-                isLoading ? "bg-muted" : "bg-primary hover:bg-primary-dark active:scale-95 shadow-primary/20"
-              )}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-xs font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-primary-dark disabled:opacity-70"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Memproses...
-                </>
-              ) : (
-                "Masuk Sekarang"
-              )}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {mode === 'login' ? 'Masuk Sekarang' : 'Buat Akun'}
             </button>
           </form>
-          
-          {loginType === 'warga' && (
-            <div className="text-center pt-2">
-              <p className="text-[10px] font-bold text-muted/60 uppercase tracking-widest leading-relaxed">
-                Tidak wajib login untuk melapor.
-                {' '}
-                <Link href="/lapor" className="text-primary hover:underline">
-                  Kirim laporan cepat dari beranda
-                </Link>
-              </p>
-            </div>
-          )}
-        </div>
 
-        {/* Help Footer */}
-        <p className="text-[10px] text-center font-bold text-muted/60 uppercase tracking-widest">
-          {loginType === 'petugas' ? 'Lupa akses? Hubungi tim IT Pemerintah Kota.' : 'Masalah login? Hubungi bantuan@cepuin.id'}
-        </p>
+          <p className="mt-5 text-center text-[10px] font-bold uppercase tracking-widest text-muted/60">
+            Melapor tetap bisa tanpa login. Login dipakai untuk fitur riwayat.
+          </p>
+        </section>
       </div>
     </main>
   )
@@ -206,11 +220,8 @@ function LoginPageContent() {
 
 function LoginPageFallback() {
   return (
-    <main className="min-h-screen bg-muted-light flex flex-col items-center justify-center p-6">
-      <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-      <p className="text-xs font-bold text-muted uppercase tracking-widest">
-        Memuat Halaman Login...
-      </p>
+    <main className="flex min-h-screen items-center justify-center bg-background p-6">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </main>
   )
 }

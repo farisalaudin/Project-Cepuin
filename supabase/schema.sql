@@ -105,6 +105,27 @@ create index if not exists idx_status_history_report
   on public.status_history (report_id, created_at desc);
 
 -- =============================
+-- TABLE: user_profiles
+-- Profil warga untuk username publik
+-- =============================
+create table if not exists public.user_profiles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  email text,
+  username text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint user_profiles_username_length check (char_length(username) between 3 and 24),
+  constraint user_profiles_username_format check (username ~ '^[a-z0-9_]+$')
+);
+
+create unique index if not exists idx_user_profiles_username_unique
+  on public.user_profiles ((lower(username)));
+
+create index if not exists idx_user_profiles_user
+  on public.user_profiles (user_id);
+
+-- =============================
 -- FUNCTION: urgency calculation
 -- Disamakan dengan src/lib/urgency.ts
 -- vote_score = min(100, vote_count * 2)
@@ -222,6 +243,12 @@ before update on public.reports
 for each row
 execute function public.update_updated_at();
 
+drop trigger if exists trigger_user_profiles_updated_at on public.user_profiles;
+create trigger trigger_user_profiles_updated_at
+before update on public.user_profiles
+for each row
+execute function public.update_updated_at();
+
 drop trigger if exists trigger_increment_votes on public.votes;
 create trigger trigger_increment_votes
 after insert on public.votes
@@ -236,6 +263,7 @@ execute function public.handle_vote_insert();
 alter table public.reports enable row level security;
 alter table public.votes enable row level security;
 alter table public.status_history enable row level security;
+alter table public.user_profiles enable row level security;
 
 drop policy if exists "Anyone can read reports" on public.reports;
 create policy "Anyone can read reports"
@@ -287,6 +315,38 @@ for insert
 with check (
   auth.role() = 'service_role'
   or auth.jwt() ->> 'email' in ('admin@cepuin.id', 'test@admin.com')
+);
+
+drop policy if exists "Users can read own profile" on public.user_profiles;
+create policy "Users can read own profile"
+on public.user_profiles
+for select
+using (
+  auth.uid() = user_id
+  or auth.role() = 'service_role'
+  or auth.jwt() ->> 'email' in ('admin@cepuin.id', 'test@admin.com')
+);
+
+drop policy if exists "Users can insert own profile" on public.user_profiles;
+create policy "Users can insert own profile"
+on public.user_profiles
+for insert
+with check (
+  auth.uid() = user_id
+  or auth.role() = 'service_role'
+);
+
+drop policy if exists "Users can update own profile" on public.user_profiles;
+create policy "Users can update own profile"
+on public.user_profiles
+for update
+using (
+  auth.uid() = user_id
+  or auth.role() = 'service_role'
+)
+with check (
+  auth.uid() = user_id
+  or auth.role() = 'service_role'
 );
 
 -- =============================

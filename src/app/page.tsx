@@ -120,7 +120,7 @@ export default function Home() {
               Cepuin
             </p>
             <h1 className="mt-1 text-base font-black tracking-tight text-foreground sm:text-lg">
-              Dashboard Lapor Cepat
+              Portal Warga Cepuin
             </h1>
           </div>
 
@@ -283,7 +283,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {user ? (
               <Link
                 href="/riwayat"
@@ -300,10 +300,10 @@ export default function Home() {
               </button>
             )}
             <Link
-              href="/admin"
+              href="/lapor"
               className="rounded-2xl border border-border bg-white px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-muted transition hover:border-primary hover:text-primary"
             >
-              Admin
+              Buat Laporan
             </Link>
           </div>
         </section>

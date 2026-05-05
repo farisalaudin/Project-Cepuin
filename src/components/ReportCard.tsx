@@ -47,6 +47,22 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
   const categoryInfo = CATEGORIES.find(c => c.value === report.category)
   const statusInfo = STATUSES.find(s => s.value === report.status)
   const CategoryIcon = categoryInfo ? iconMap[categoryInfo.icon] : MoreHorizontal
+  const photoSrc = report.photo_url?.trim() ?? ''
+
+  const isValidPhotoUrl = (() => {
+    if (!photoSrc) return false
+
+    try {
+      const parsed = new URL(photoSrc)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!supabaseUrl) return false
+
+      const supabaseHost = new URL(supabaseUrl).hostname
+      return parsed.hostname === supabaseHost
+    } catch {
+      return false
+    }
+  })()
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -77,9 +93,9 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
       <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
         {/* Thumbnail */}
         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-muted-light sm:h-24 sm:w-24">
-          {report.photo_url ? (
+          {isValidPhotoUrl ? (
             <Image
-              src={report.photo_url}
+              src={photoSrc}
               alt={report.category}
               fill
               className="object-cover group-hover:scale-110 transition-transform duration-500"

@@ -78,14 +78,33 @@ export default function ReportForm() {
       // 0. Get user session if exists
       const { data: { user } } = await supabase.auth.getUser()
 
-      // 1. Create initial report (to get ID)
+      // 1. Prepare report ID and optional photo URL first.
       setSubmissionStatus('Menyimpan data laporan...')
       const now = new Date().toISOString()
       const initialUrgency = calculateUrgencyScore(0, category as ReportCategory, now)
+      const reportDraftId = crypto.randomUUID()
+      let photoUrl: string | null = null
 
+      if (photo) {
+        try {
+          setSubmissionStatus('Mengompres foto...')
+          await new Promise(r => setTimeout(r, 500))
+
+          setSubmissionStatus('Mengunggah foto ke server...')
+          photoUrl = await uploadReportPhoto(photo, reportDraftId)
+        } catch (photoErr) {
+          console.error('Photo upload warning:', photoErr)
+          setPhotoWarning('Foto gagal diunggah, tapi laporan utama sudah berhasil terkirim.')
+          setSubmissionStatus('Menyimpan laporan tanpa foto...')
+        }
+      }
+
+      // 2. Create report once (with photo_url if upload succeeded)
       newReport = await createReport({
+        id: reportDraftId,
         category: category as ReportCategory,
         description,
+        photo_url: photoUrl,
         lat: location.lat,
         lng: location.lng,
         address: location.address,
@@ -94,31 +113,6 @@ export default function ReportForm() {
         vote_count: 0,
         user_id: user?.id || null, // Link to user if logged in
       })
-
-      // 2. Upload photo if exists
-      if (photo && newReport.id) {
-        try {
-          setSubmissionStatus('Mengompres foto...')
-          // Delay sedikit agar user bisa baca statusnya (opsional untuk UX)
-          await new Promise(r => setTimeout(r, 500))
-          
-          setSubmissionStatus('Mengunggah foto ke server...')
-          const photoUrl = await uploadReportPhoto(photo, newReport.id)
-          
-          setSubmissionStatus('Menyelesaikan laporan...')
-          // Update report with photo URL
-          const { error: updateError } = await supabase
-            .from('reports')
-            .update({ photo_url: photoUrl })
-            .eq('id', newReport.id)
-
-          if (updateError) throw updateError
-        } catch (photoErr) {
-          console.error('Photo upload warning:', photoErr)
-          setPhotoWarning('Foto gagal diunggah, tapi laporan utama sudah berhasil terkirim.')
-          setSubmissionStatus('Menyelesaikan laporan tanpa foto...')
-        }
-      }
 
       setSubmissionStatus('Selesai!')
       setReportId(newReport.id)

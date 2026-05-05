@@ -39,14 +39,7 @@
 :root {
   --background: #fffdf8;
   --foreground: #172033;
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f8fafc;
-  }
+  color-scheme: light;
 }
 
 /* Base body styles */
@@ -59,6 +52,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* Smooth scrolling */

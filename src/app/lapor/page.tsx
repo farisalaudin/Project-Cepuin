@@ -1,68 +1,66 @@
 'use client'
 
 import React from 'react'
-import { ChevronLeft, Info } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { ChevronLeft, Info } from 'lucide-react'
 import ReportForm from '@/components/ReportForm'
-
 
 export default function LaporPage() {
   const router = useRouter()
 
   return (
-    <main className="min-h-screen bg-background flex flex-col max-w-lg mx-auto shadow-xl">
-      {/* Header Bar */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-5 bg-white/70 backdrop-blur-lg border-b border-border shadow-sm">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2.5 rounded-xl bg-muted-light/50 text-muted hover:text-foreground transition-all active:scale-95 hover:bg-border"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-lg font-black text-foreground uppercase tracking-tight leading-none">
-              Laporin Masalah
-            </h1>
-            <p className="text-[10px] font-bold text-muted/60 uppercase tracking-widest mt-1.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Laporan Real-time
-            </p>
+    <main className="min-h-screen bg-background pb-12">
+      <header className="sticky top-0 z-40 border-b border-border bg-white/95">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="rounded-xl border border-border bg-white p-2.5 text-muted transition-all hover:border-primary hover:text-foreground"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-foreground sm:text-xl">Kirim Laporan</h1>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted/70">
+                Mode Warga
+              </p>
+            </div>
           </div>
+
+          <button
+            className="rounded-xl border border-border bg-white p-2.5 text-primary transition-all hover:bg-primary-light/50"
+            onClick={() => alert('Tips: isi kategori, lokasi, lalu kirim. Foto opsional.')}
+          >
+            <Info className="h-5 w-5" />
+          </button>
         </div>
-        
-        <button 
-          className="p-2.5 rounded-xl bg-primary-light/50 text-primary hover:bg-primary-light transition-all active:scale-95 shadow-sm shadow-primary/5"
-          onClick={() => alert('Fitur bantuan belum tersedia')}
-        >
-          <Info className="w-5 h-5" />
-        </button>
       </header>
 
-      {/* Hero Header */}
-      <div className="px-6 py-10 bg-gradient-to-br from-primary-light/30 via-white to-background relative overflow-hidden">
-        <div className="absolute top-[-20px] right-[-20px] w-32 h-32 rounded-full bg-accent/5 blur-2xl" />
-        <div className="relative z-10 max-w-xs space-y-3">
-          <h2 className="text-2xl font-black text-primary-dark tracking-tight leading-tight uppercase">
-            Ayo Bantu <br /> Perbaiki <span className="text-accent">Kota Kita!</span>
+      <div className="mx-auto mt-5 w-full max-w-6xl px-4 sm:px-6 lg:px-10">
+        <section className="rounded-[28px] border border-white/70 bg-[linear-gradient(145deg,#115e59_0%,#0f766e_55%,#0b4c49_100%)] p-6 text-white shadow-[0_28px_80px_-40px_rgba(15,118,110,0.9)] sm:p-7">
+          <h2 className="text-2xl font-black leading-tight tracking-tight sm:text-3xl">
+            Bantu kota jadi lebih cepat tanggap.
           </h2>
-          <p className="text-xs text-muted/80 font-bold uppercase tracking-wider leading-relaxed">
-            Laporkan masalah infrastruktur di sekitarmu dalam hitungan &quot;detik&quot;.
+          <p className="mt-2 max-w-2xl text-sm font-medium text-white/85 sm:text-base">
+            Laporan Anda akan langsung masuk antrean penanganan. Isi singkat, jelas, dan sesuai lokasi.
           </p>
-        </div>
-      </div>
+        </section>
 
-      {/* Main Form Area */}
-      <div className="px-6 flex-1 bg-white/50 backdrop-blur-sm rounded-t-[48px] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.05)] border-t border-border/50 pt-12">
-        <ReportForm />
-      </div>
+        <section className="mt-5 rounded-[30px] border border-border bg-white p-5 shadow-[0_28px_80px_-45px_rgba(15,23,42,0.35)] sm:p-6 lg:p-8">
+          <ReportForm />
+        </section>
 
-      {/* Footer Navigation (Mobile Style) */}
-      <footer className="sticky bottom-0 p-5 bg-white/80 backdrop-blur-md border-t border-border flex justify-center">
-        <p className="text-[9px] font-black text-muted/60 uppercase tracking-[0.15em] text-center leading-relaxed">
-          Bukan untuk keadaan darurat. <br /> Hubungi <span className="text-primary-dark">112</span> untuk Ambulans/Pemadam
-        </p>
-      </footer>
+        <footer className="mt-6 rounded-2xl border border-border bg-white/80 p-4 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-muted/70">
+            Bukan untuk keadaan darurat. Hubungi <span className="text-primary">112</span> untuk ambulans/pemadam.
+          </p>
+          <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted/60">
+            Butuh lihat status? <Link href="/riwayat" className="text-primary hover:underline">Buka riwayat</Link>
+          </p>
+        </footer>
+      </div>
     </main>
   )
 }
+
