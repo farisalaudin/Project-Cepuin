@@ -26,7 +26,7 @@ import { formatTimeAgo } from '@/lib/utils'
 
 interface ReportCardProps {
   report: Report
-  onVoteSuccess?: () => void
+  onVoteSuccess?: (reportId: string) => void
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -56,7 +56,7 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
     try {
       await submitVote(report.id)
       setHasVoted(true)
-      onVoteSuccess?.()
+      onVoteSuccess?.(report.id)
     } catch (err) {
       alert((err as Error).message)
     } finally {

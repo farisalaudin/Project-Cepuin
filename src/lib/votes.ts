@@ -2,10 +2,8 @@
 // Voting Utilities
 // ============================
 
-import { supabase } from './supabase'
+import { supabase } from './supabase/client'
 import { getSessionId } from './session'
-import { calculateUrgencyScore } from './urgency'
-import type { ReportCategory } from '@/types'
 
 /**
  * Submit a vote for a report.
@@ -31,32 +29,4 @@ export const submitVote = async (reportId: string) => {
     console.error('Vote error:', error)
     throw new Error('Gagal memberikan dukungan. Silakan coba lagi.')
   }
-
-  // Recalculate urgency score after vote
-  await recalculateUrgency(reportId)
-}
-
-/**
- * Recalculate and update the urgency score for a given report.
- * Called after every new vote.
- */
-export const recalculateUrgency = async (reportId: string) => {
-  const { data: report, error } = await supabase
-    .from('reports')
-    .select('vote_count, category, created_at')
-    .eq('id', reportId)
-    .single()
-
-  if (error || !report) return
-
-  const newScore = calculateUrgencyScore(
-    report.vote_count,
-    report.category as ReportCategory,
-    report.created_at
-  )
-
-  await supabase
-    .from('reports')
-    .update({ urgency_score: newScore })
-    .eq('id', reportId)
 }

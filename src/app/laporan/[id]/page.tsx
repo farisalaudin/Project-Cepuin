@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/client'
 import { Report, StatusHistory, STATUSES, CATEGORIES } from '@/types'
 import { cn } from '@/lib/cn'
 import { submitVote } from '@/lib/votes'

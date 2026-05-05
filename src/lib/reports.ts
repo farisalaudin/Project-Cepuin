@@ -2,7 +2,7 @@
 // Report Utilities
 // ============================
 
-import { supabase } from './supabase'
+import { supabase } from './supabase/client'
 import { DUPLICATE_RADIUS_METERS, getDistanceInMeters } from './geo'
 import type { Report, ReportCategory } from '@/types'
 

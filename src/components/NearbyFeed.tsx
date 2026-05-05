@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Loader2, AlertCircle, RefreshCw, AlertTriangle } from 'lucide-react'
 import { getCurrentLocation } from '@/lib/geo'
 import { getNearbyReports, getLatestReports } from '@/lib/reports'
@@ -8,54 +8,95 @@ import { Report } from '@/types'
 import ReportCard from './ReportCard'
 import LocationSearch from './LocationSearch'
 
+interface FeedFetchOptions {
+  forceLocation?: boolean
+  manualCoords?: { lat: number; lng: number; address: string }
+  keepCurrentList?: boolean
+}
+
 export default function NearbyFeed() {
   const [reports, setReports] = useState<Report[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [address, setAddress] = useState<string>('Sekitar Kamu')
   const [isFallback, setIsFallback] = useState(false)
+  const hasLoadedRef = useRef(false)
+  const latestRequestRef = useRef(0)
 
-  const fetchFeed = useCallback(async (forceLocation = false, manualCoords?: { lat: number; lng: number; address: string }) => {
-    setIsLoading(true)
-    setIsFallback(false)
+  const fetchFeed = useCallback(async ({
+    forceLocation = false,
+    manualCoords,
+    keepCurrentList = true
+  }: FeedFetchOptions = {}) => {
+    const requestId = ++latestRequestRef.current
+
+    if (!hasLoadedRef.current || !keepCurrentList) {
+      setIsInitialLoading(true)
+    } else {
+      setIsRefreshing(true)
+    }
+
     try {
       let currentCoords = coords
-      
+      let fallbackMode = false
+      let nextAddress = address
+      let data: Report[] = []
+
       if (manualCoords) {
         currentCoords = { lat: manualCoords.lat, lng: manualCoords.lng }
-        setCoords(currentCoords)
-        setAddress(manualCoords.address)
-        const data = await getNearbyReports(currentCoords.lat, currentCoords.lng)
-        setReports(data)
+        nextAddress = manualCoords.address
+        data = await getNearbyReports(currentCoords.lat, currentCoords.lng)
       } else if (!currentCoords || forceLocation) {
         try {
           const pos = await getCurrentLocation()
           currentCoords = { lat: pos.latitude, lng: pos.longitude }
-          setCoords(currentCoords)
-          setAddress('Sekitar Kamu')
-          const data = await getNearbyReports(currentCoords.lat, currentCoords.lng)
-          setReports(data)
+          nextAddress = 'Sekitar Kamu'
+          data = await getNearbyReports(currentCoords.lat, currentCoords.lng)
         } catch (geoErr) {
           console.warn('GPS failed, falling back to latest reports:', geoErr)
-          setIsFallback(true)
-          setAddress('Terbaru di Kotamu')
-          const data = await getLatestReports()
-          setReports(data)
+          fallbackMode = true
+          nextAddress = 'Terbaru di Kotamu'
+          data = await getLatestReports()
         }
       } else {
-        const data = await getNearbyReports(currentCoords.lat, currentCoords.lng)
+        data = await getNearbyReports(currentCoords.lat, currentCoords.lng)
+      }
+
+      if (requestId === latestRequestRef.current) {
+        if (currentCoords) {
+          setCoords(currentCoords)
+        }
+        setAddress(nextAddress)
+        setIsFallback(fallbackMode)
         setReports(data)
       }
     } catch (err) {
       console.error('Feed fetch error:', err)
     } finally {
-      setIsLoading(false)
+      if (requestId === latestRequestRef.current) {
+        hasLoadedRef.current = true
+        setIsInitialLoading(false)
+        setIsRefreshing(false)
+      }
     }
-  }, [coords])
+  }, [coords, address])
 
   useEffect(() => {
-    fetchFeed()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void (async () => {
+      setIsInitialLoading(true)
+      setIsFallback(true)
+      setAddress('Terbaru di Kotamu')
+      try {
+        const data = await getLatestReports()
+        setReports(data)
+      } catch (err) {
+        console.error('Initial feed error:', err)
+      } finally {
+        hasLoadedRef.current = true
+        setIsInitialLoading(false)
+      }
+    })()
   }, [])
 
   return (
@@ -63,7 +104,12 @@ export default function NearbyFeed() {
       {/* Search Bar */}
       <div className="px-1">
         <LocationSearch 
-          onLocationSelect={(lat, lng, addr) => fetchFeed(false, { lat, lng, address: addr })} 
+          onLocationSelect={(lat, lng, addr) => {
+            void fetchFeed({
+              manualCoords: { lat, lng, address: addr },
+              keepCurrentList: true
+            })
+          }}
         />
       </div>
 
@@ -73,16 +119,16 @@ export default function NearbyFeed() {
             📍 <span className="truncate max-w-[200px] uppercase">{address}</span>
           </h2>
           <p className="text-[10px] font-black text-muted/60 uppercase tracking-widest flex items-center gap-1.5 mt-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-success" />
             Laporan dalam radius 2km
           </p>
         </div>
         <button
-          onClick={() => fetchFeed(true)}
-          disabled={isLoading}
+          onClick={() => void fetchFeed({ forceLocation: true, keepCurrentList: true })}
+          disabled={isInitialLoading || isRefreshing}
           className="p-3 rounded-2xl bg-white/50 backdrop-blur-sm border border-border text-muted hover:text-primary transition-all active:rotate-180 active:scale-95 disabled:opacity-50 shadow-sm hover:border-primary/30"
         >
-          {isLoading ? (
+          {isInitialLoading || isRefreshing ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <RefreshCw className="w-4 h-4" />
@@ -90,7 +136,14 @@ export default function NearbyFeed() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isRefreshing && (
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted/60">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+          Memperbarui laporan...
+        </div>
+      )}
+
+      {isInitialLoading && reports.length === 0 ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-24 bg-muted-light rounded-2xl animate-pulse" />
@@ -131,7 +184,15 @@ export default function NearbyFeed() {
                 <ReportCard 
                   key={report.id} 
                   report={report} 
-                  onVoteSuccess={() => fetchFeed()} 
+                  onVoteSuccess={(reportId) => {
+                    setReports((prev) =>
+                      prev.map((item) =>
+                        item.id === reportId
+                          ? { ...item, vote_count: item.vote_count + 1 }
+                          : item
+                      )
+                    )
+                  }} 
                 />
               ))}
             </div>

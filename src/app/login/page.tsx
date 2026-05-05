@@ -2,7 +2,7 @@
 
 import React, { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/client'
 import { Mail, Lock, Loader2, ArrowLeft, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/cn'

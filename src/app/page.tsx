@@ -1,25 +1,32 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { User } from '@supabase/supabase-js'
 import {
   ArrowRight,
   Camera,
   FilePlus2,
   History,
+  LogOut,
   MapPin,
   RefreshCw,
   ShieldCheck,
   ThumbsUp,
 } from 'lucide-react'
 import NearbyFeed from '@/components/NearbyFeed'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, resolved: 0, votes: 0 })
   const [isStatsLoading, setIsStatsLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null)
 
-  const fetchStats = async () => {
+  const router = useRouter()
+
+  const fetchStats = useCallback(async () => {
     setIsStatsLoading(true)
     try {
       const { count: reportCount } = await supabase
@@ -36,7 +43,11 @@ export default function Home() {
         .select('vote_count')
 
       const totalVotes =
-        voteData?.reduce((total, report) => total + (report.vote_count || 0), 0) || 0
+        voteData?.reduce(
+          (total: number, report: { vote_count: number | null }) =>
+            total + (report.vote_count || 0),
+          0
+        ) || 0
 
       setStats({
         reports: reportCount || 0,
@@ -48,17 +59,62 @@ export default function Home() {
     } finally {
       setIsStatsLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    fetchStats()
-  }, [])
+    let isMounted = true
+
+    const getUser = async () => {
+      try {
+        const userPromise = supabase.auth.getUser()
+        const timeoutPromise = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 2500)
+        )
+
+        const result = await Promise.race([userPromise, timeoutPromise])
+        const nextUser =
+          result && typeof result === 'object' && 'data' in result
+            ? result.data.user
+            : null
+
+        if (isMounted) {
+          setUser(nextUser ?? null)
+        }
+      } catch (error) {
+        console.warn('Auth check fallback to guest:', error)
+        if (isMounted) {
+          setUser(null)
+        }
+      }
+    }
+
+    void getUser()
+    void fetchStats()
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event: string, session: Session | null) => {
+        if (isMounted) {
+          setUser(session?.user ?? null)
+        }
+      }
+    )
+
+    return () => {
+      isMounted = false
+      authListener.subscription.unsubscribe()
+    }
+  }, [fetchStats])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.refresh()
+  }
 
   return (
     <main className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col bg-background/90 pb-28 shadow-[0_40px_140px_-60px_rgba(15,23,42,0.45)]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(234,88,12,0.18),_transparent_55%)]" />
 
-      <header className="sticky top-0 z-40 border-b border-white/50 bg-white/75 px-5 py-4 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/50 bg-white/90 px-5 py-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
@@ -68,12 +124,27 @@ export default function Home() {
               Dashboard Lapor Cepat
             </h1>
           </div>
-          <Link
-            href="/login"
-            className="rounded-full border border-border bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted shadow-sm transition hover:border-primary hover:text-primary"
-          >
-            Masuk
-          </Link>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="hidden text-xs text-muted-foreground sm:inline">
+                {user.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="rounded-full border border-border bg-white p-2 text-muted shadow-sm transition hover:border-primary hover:text-primary"
+                aria-label="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-full border border-border bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted shadow-sm transition hover:border-primary hover:text-primary"
+            >
+              Masuk
+            </Link>
+          )}
         </div>
       </header>
 
@@ -137,12 +208,21 @@ export default function Home() {
                 >
                   Lihat Sekitar
                 </Link>
-                <Link
-                  href="/riwayat"
-                  className="rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-white/15"
-                >
-                  Riwayat Saya
-                </Link>
+                {user ? (
+                  <Link
+                    href="/riwayat"
+                    className="rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-white/15"
+                  >
+                    Riwayat Saya
+                  </Link>
+                ) : (
+                  <div
+                    onClick={() => router.push('/login')}
+                    className="cursor-pointer rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/50 transition hover:bg-white/15"
+                  >
+                    Riwayat Saya
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -150,7 +230,7 @@ export default function Home() {
       </section>
 
       <section className="px-5 pt-5">
-        <div className="rounded-[28px] border border-white/60 bg-white/78 p-5 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.35)] backdrop-blur-xl">
+        <div className="rounded-[28px] border border-white/60 bg-white/90 p-5 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.35)]">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/70">
@@ -200,7 +280,7 @@ export default function Home() {
       </section>
 
       <section id="feed" className="flex-1 px-5 pb-8 pt-5">
-        <div className="rounded-[32px] border border-white/60 bg-white/72 px-4 py-5 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.38)] backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/60 bg-white/90 px-4 py-5 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.38)]">
           <div className="mb-5 flex items-start justify-between gap-4 px-1">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/70">
@@ -220,8 +300,8 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg px-4 pb-4">
-        <div className="grid grid-cols-[0.95fr_1.25fr_0.95fr] gap-3 rounded-[30px] border border-white/70 bg-white/86 p-3 shadow-[0_28px_90px_-36px_rgba(15,23,42,0.5)] backdrop-blur-2xl">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg px-4 pb-4">
+        <div className="pointer-events-auto grid grid-cols-[0.95fr_1.25fr_0.95fr] gap-3 rounded-[30px] border border-white/70 bg-white/95 p-3 shadow-[0_28px_90px_-36px_rgba(15,23,42,0.5)]">
           <Link
             href="/"
             className="flex flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary"
@@ -236,13 +316,23 @@ export default function Home() {
             <FilePlus2 className="h-4 w-4" />
             Lapor
           </Link>
-          <Link
-            href="/riwayat"
-            className="flex flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted"
-          >
-            <History className="h-4 w-4" />
-            Riwayat
-          </Link>
+          {user ? (
+            <Link
+              href="/riwayat"
+              className="flex flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted"
+            >
+              <History className="h-4 w-4" />
+              Riwayat
+            </Link>
+          ) : (
+            <div
+              onClick={() => router.push('/login')}
+              className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted/50"
+            >
+              <History className="h-4 w-4" />
+              Riwayat
+            </div>
+          )}
         </div>
       </div>
     </main>

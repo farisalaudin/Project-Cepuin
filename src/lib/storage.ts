@@ -2,7 +2,7 @@
 // Supabase Storage Utilities
 // ============================
 
-import { supabase } from './supabase'
+import { supabase } from './supabase/client'
 
 /**
  * Upload a report photo to Supabase storage.

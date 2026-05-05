@@ -12,7 +12,7 @@ import {
   FileText,
   Search
 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/client'
 import { Report } from '@/types'
 import ReportCard from '@/components/ReportCard'
 import Link from 'next/link'

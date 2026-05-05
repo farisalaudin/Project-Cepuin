@@ -15,7 +15,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { Report, STATUSES, ReportStatus } from '@/types'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/cn'
 import Image from 'next/image'
 
