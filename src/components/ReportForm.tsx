@@ -8,10 +8,11 @@ import {
   CheckCircle2,
   Info,
   ChevronRight,
-  ThumbsUp
+  ThumbsUp,
+  AlertCircle
 } from 'lucide-react'
 import { Report, ReportCategory } from '@/types'
-import { createReport, findNearbyDuplicates, deleteReport } from '@/lib/reports'
+import { createReport, findNearbyDuplicates } from '@/lib/reports'
 import { uploadReportPhoto } from '@/lib/storage'
 import { calculateUrgencyScore } from '@/lib/urgency'
 import { submitVote } from '@/lib/votes'
@@ -31,6 +32,7 @@ export default function ReportForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionStatus, setSubmissionStatus] = useState<string>('')
   const [isSuccess, setIsSuccess] = useState(false)
+  const [photoWarning, setPhotoWarning] = useState<string>('')
   const [duplicates, setDuplicates] = useState<Report[]>([])
   const [reportId, setReportId] = useState<string>('')
   const [votedIds, setVotedIds] = useState<string[]>([])
@@ -69,6 +71,7 @@ export default function ReportForm() {
 
     setIsSubmitting(true)
     setSubmissionStatus('Menghubungkan ke sistem...')
+    setPhotoWarning('')
     let newReport: Report | null = null
 
     try {
@@ -111,11 +114,9 @@ export default function ReportForm() {
 
           if (updateError) throw updateError
         } catch (photoErr) {
-          // If photo upload/update fails, delete the report so user can retry properly
-          if (newReport.id) {
-            await deleteReport(newReport.id)
-          }
-          throw photoErr
+          console.error('Photo upload warning:', photoErr)
+          setPhotoWarning('Foto gagal diunggah, tapi laporan utama sudah berhasil terkirim.')
+          setSubmissionStatus('Menyelesaikan laporan tanpa foto...')
         }
       }
 
@@ -143,6 +144,14 @@ export default function ReportForm() {
         <p className="text-sm text-muted mb-8 max-w-xs leading-relaxed">
           Terima kasih telah berkontribusi menjaga kota kita. Laporan #{reportId.slice(0, 8)} sudah masuk sistem.
         </p>
+        {photoWarning && (
+          <div className="mb-6 w-full rounded-2xl border border-accent/30 bg-accent-light/40 p-4 text-left">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 text-accent-dark" />
+              <p className="text-xs font-semibold text-accent-dark">{photoWarning}</p>
+            </div>
+          </div>
+        )}
 
         <div className="w-full space-y-3">
           <button

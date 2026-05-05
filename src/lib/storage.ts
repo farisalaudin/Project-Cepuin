@@ -14,16 +14,19 @@ export const uploadReportPhoto = async (file: File, reportId: string) => {
   // Compress before upload (target < 800KB)
   const compressedFile = await compressImage(file)
 
-  const extension = file.name.split('.').pop() || 'jpg'
-  const fileName = `${reportId}/${Date.now()}.${extension}`
+  // Always save as jpg to match compressed output and bucket MIME policy.
+  const fileName = `${reportId}/${Date.now()}.jpg`
 
   const { error } = await supabase.storage
     .from('photos')
-    .upload(fileName, compressedFile)
+    .upload(fileName, compressedFile, {
+      contentType: 'image/jpeg',
+      upsert: false,
+    })
 
   if (error) {
     console.error('Upload error:', error)
-    throw new Error('Gagal mengupload foto. Silakan coba lagi.')
+    throw new Error(error.message || 'Gagal mengupload foto. Silakan coba lagi.')
   }
 
   const { data: urlData } = supabase.storage
