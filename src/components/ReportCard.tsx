@@ -64,14 +64,19 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
     }
   }
 
+  const handleOpenDetail = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    router.push(`/laporan/${report.id}`)
+  }
+
   return (
     <div 
-      onClick={() => router.push(`/laporan/${report.id}`)}
-      className="group bg-white rounded-2xl border border-border overflow-hidden hover:shadow-xl hover:border-primary-light transition-all duration-300 cursor-pointer"
+      onClick={() => handleOpenDetail()}
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-white transition-all duration-300 hover:border-primary-light hover:shadow-xl"
     >
-      <div className="flex p-4 gap-4">
+      <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
         {/* Thumbnail */}
-        <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-muted-light flex-shrink-0">
+        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-muted-light sm:h-24 sm:w-24">
           {report.photo_url ? (
             <Image
               src={report.photo_url}
@@ -85,7 +90,7 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
             </div>
           )}
           {/* Urgency Badge Overlay */}
-          <div className="absolute top-2 left-2 px-2.5 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[10px] font-black text-white flex items-center gap-1.5 shadow-xl">
+          <div className="absolute left-1.5 top-1.5 flex items-center gap-1 rounded-lg bg-black/65 px-2 py-1 text-[9px] font-black text-white shadow-xl sm:left-2 sm:top-2 sm:gap-1.5 sm:px-2.5 sm:text-[10px]">
             <span className={cn(
               "w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]",
               report.urgency_score > 80 ? "bg-danger" : report.urgency_score > 50 ? "bg-accent" : "bg-success"
@@ -95,43 +100,43 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 space-y-2.5">
+        <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-sm font-black text-foreground leading-tight truncate pr-2 uppercase tracking-tight">
+            <h3 className="truncate pr-2 text-sm font-black leading-tight tracking-tight text-foreground sm:text-[15px]">
               {categoryInfo?.label || 'Laporan Infrastruktur'}
             </h3>
             <span 
-              className="text-[9px] font-black px-2.5 py-1 rounded-xl whitespace-nowrap uppercase tracking-wider shadow-sm"
-              style={{ color: statusInfo?.color, backgroundColor: statusInfo?.bgColor + 'CC', backdropFilter: 'blur(4px)' }}
+              className="whitespace-nowrap rounded-xl px-2 py-1 text-[9px] font-black uppercase tracking-wider shadow-sm"
+              style={{ color: statusInfo?.color, backgroundColor: `${statusInfo?.bgColor}CC` }}
             >
               {statusInfo?.label}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted/60 uppercase tracking-wide">
-            <MapPin className="w-3 h-3 flex-shrink-0 text-primary/50" />
-            <span className="truncate leading-none">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-muted/70 sm:text-[11px]">
+            <MapPin className="h-3 w-3 flex-shrink-0 text-primary/50" />
+            <span className="truncate">
               {report.address || 'Lokasi Terdeteksi'}
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-[9px] font-black text-muted/40 uppercase tracking-[0.1em]">
+          <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.1em] text-muted/50 sm:gap-4">
             <div className="flex items-center gap-1.5">
-              <Clock className="w-3 h-3" />
+              <Clock className="h-3 w-3" />
               {formatTimeAgo(report.created_at)}
             </div>
             <div className="flex items-center gap-1.5">
-              <Heart className="w-3 h-3 text-danger/60" />
+              <Heart className="h-3 w-3 text-danger/60" />
               {report.vote_count}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-1.5">
+          <div className="flex items-center gap-2 pt-1">
             <button
               onClick={handleVote}
               disabled={isVoting || hasVoted}
               className={cn(
-                "flex-1 py-2.5 px-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm",
+                "flex flex-1 items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 sm:px-4",
                 hasVoted
                   ? "bg-success-light/50 text-success border border-success/20"
                   : "bg-danger-light/50 text-danger hover:bg-danger hover:text-white hover:shadow-danger/20"
@@ -152,8 +157,8 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
               )}
             </button>
             <button 
-              className="p-2.5 rounded-2xl bg-muted-light/50 text-muted hover:text-foreground hover:bg-border transition-all active:scale-95 shadow-sm"
-              onClick={() => {}} // Navigate to detail
+              className="rounded-2xl bg-muted-light/50 p-2.5 text-muted shadow-sm transition-all hover:bg-border hover:text-foreground active:scale-95"
+              onClick={(e) => handleOpenDetail(e)}
             >
               <ChevronRight className="w-4 h-4" />
             </button>

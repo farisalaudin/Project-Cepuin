@@ -100,9 +100,9 @@ export default function NearbyFeed() {
   }, [])
 
   return (
-    <section className="space-y-6 animate-in fade-in duration-500">
+    <section className="space-y-5 animate-in fade-in duration-500 sm:space-y-6">
       {/* Search Bar */}
-      <div className="px-1">
+      <div>
         <LocationSearch 
           onLocationSelect={(lat, lng, addr) => {
             void fetchFeed({
@@ -114,11 +114,12 @@ export default function NearbyFeed() {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="flex flex-col flex-1 min-w-0 pr-4">
-          <h2 className="text-xl font-black text-foreground tracking-tight flex items-center gap-2">
-            📍 <span className="truncate max-w-[200px] uppercase">{address}</span>
+        <div className="flex min-w-0 flex-1 flex-col pr-4">
+          <h2 className="flex items-center gap-2 text-lg font-black tracking-tight text-foreground sm:text-xl">
+            <span className="text-base">📍</span>
+            <span className="max-w-[150px] truncate uppercase sm:max-w-[240px]">{address}</span>
           </h2>
-          <p className="text-[10px] font-black text-muted/60 uppercase tracking-widest flex items-center gap-1.5 mt-1">
+          <p className="mt-1 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-muted/60">
             <span className="w-1.5 h-1.5 rounded-full bg-success" />
             Laporan dalam radius 2km
           </p>
@@ -126,7 +127,7 @@ export default function NearbyFeed() {
         <button
           onClick={() => void fetchFeed({ forceLocation: true, keepCurrentList: true })}
           disabled={isInitialLoading || isRefreshing}
-          className="p-3 rounded-2xl bg-white/50 backdrop-blur-sm border border-border text-muted hover:text-primary transition-all active:rotate-180 active:scale-95 disabled:opacity-50 shadow-sm hover:border-primary/30"
+          className="rounded-2xl border border-border bg-white/90 p-3 text-muted shadow-sm transition-all hover:border-primary/30 hover:text-primary active:scale-95 disabled:opacity-50"
         >
           {isInitialLoading || isRefreshing ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -137,7 +138,7 @@ export default function NearbyFeed() {
       </div>
 
       {isRefreshing && (
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted/60">
+        <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-muted-light/50 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-muted/70">
           <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
           Memperbarui laporan...
         </div>
@@ -152,11 +153,11 @@ export default function NearbyFeed() {
       ) : (
         <div className="space-y-6">
           {isFallback && (
-            <div className="p-4 bg-primary-light/30 border border-primary/10 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="animate-in fade-in slide-in-from-top-2 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary-light/30 p-4 duration-500">
               <div className="p-2 bg-white rounded-xl shadow-sm">
                 <AlertCircle className="w-4 h-4 text-primary" />
               </div>
-              <p className="text-[10px] font-bold text-primary-dark uppercase leading-relaxed">
+              <p className="text-[10px] font-bold uppercase leading-relaxed text-primary-dark sm:text-xs">
                 Aktifkan lokasi untuk melihat masalah di sekitarmu.
               </p>
             </div>
@@ -179,7 +180,7 @@ export default function NearbyFeed() {
               </button>
             </div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               {reports.map((report) => (
                 <ReportCard 
                   key={report.id} 

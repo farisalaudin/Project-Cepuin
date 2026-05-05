@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { User } from '@supabase/supabase-js'
+import { Session, User } from '@supabase/supabase-js'
 import {
   ArrowRight,
   Camera,
@@ -16,8 +16,7 @@ import {
   ThumbsUp,
 } from 'lucide-react'
 import NearbyFeed from '@/components/NearbyFeed'
-import { supabase } from '@/lib/supabase/client';
-import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase/client'
 
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, resolved: 0, votes: 0 })
@@ -111,36 +110,62 @@ export default function Home() {
   }
 
   return (
-    <main className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col bg-background/90 pb-28 shadow-[0_40px_140px_-60px_rgba(15,23,42,0.45)]">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,_rgba(234,88,12,0.18),_transparent_55%)]" />
+    <main className="relative min-h-screen bg-background/95 pb-24 md:pb-10">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,_rgba(15,118,110,0.24),_transparent_56%)]" />
 
-      <header className="sticky top-0 z-40 border-b border-white/50 bg-white/90 px-5 py-4">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/90">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-10">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">
+            <p className="text-[10px] font-black uppercase tracking-[0.35em] text-primary">
               Cepuin
             </p>
-            <h1 className="mt-1 text-base font-black tracking-tight text-foreground">
+            <h1 className="mt-1 text-base font-black tracking-tight text-foreground sm:text-lg">
               Dashboard Lapor Cepat
             </h1>
           </div>
-          {user ? (
-            <div className="flex items-center gap-2">
-              <span className="hidden text-xs text-muted-foreground sm:inline">
-                {user.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="rounded-full border border-border bg-white p-2 text-muted shadow-sm transition hover:border-primary hover:text-primary"
-                aria-label="Logout"
+
+          <div className="hidden items-center gap-2 md:flex">
+            <Link
+              href="/"
+              className="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-primary"
+            >
+              Beranda
+            </Link>
+            <Link
+              href="/lapor"
+              className="rounded-full bg-accent px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white"
+            >
+              Lapor
+            </Link>
+            {user ? (
+              <Link
+                href="/riwayat"
+                className="rounded-full border border-border bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-muted transition hover:border-primary hover:text-primary"
               >
-                <LogOut className="h-4 w-4" />
+                Riwayat
+              </Link>
+            ) : (
+              <button
+                onClick={() => router.push('/login')}
+                className="rounded-full border border-border bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-muted transition hover:border-primary hover:text-primary"
+              >
+                Login
               </button>
-            </div>
+            )}
+          </div>
+
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="rounded-full border border-border bg-white p-2 text-muted shadow-sm transition hover:border-primary hover:text-primary"
+              aria-label="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           ) : (
             <Link
               href="/login"
-              className="rounded-full border border-border bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted shadow-sm transition hover:border-primary hover:text-primary"
+              className="rounded-full border border-border bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted shadow-sm transition hover:border-primary hover:text-primary md:hidden"
             >
               Masuk
             </Link>
@@ -148,145 +173,151 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="px-5 pt-5">
-        <div className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(145deg,#115e59_0%,#0f766e_55%,#0b4c49_100%)] px-5 pb-6 pt-5 text-white shadow-[0_32px_70px_-36px_rgba(15,118,110,0.85)]">
-          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-14 left-1/2 h-28 w-28 -translate-x-1/2 rounded-full bg-accent/20 blur-3xl" />
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-5 px-4 pt-5 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-6 lg:px-10 lg:pt-7">
+        <section className="relative overflow-hidden rounded-[30px] bg-[linear-gradient(145deg,#115e59_0%,#0f766e_50%,#0b4c49_100%)] px-5 pb-6 pt-5 text-white shadow-[0_30px_80px_-35px_rgba(15,118,110,0.9)] sm:px-6 sm:pb-7 sm:pt-6">
+          <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-16 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-accent/20 blur-3xl" />
 
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/90">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-white/90">
               <ShieldCheck className="h-3.5 w-3.5" />
               Fokus utama: lapor dulu
             </div>
 
-            <h2 className="mt-4 max-w-xs text-3xl font-black leading-[1.05] tracking-tight">
-              Buka aplikasi, langsung tekan <span className="text-accent-light">Lapor</span>.
+            <h2 className="mt-4 max-w-xl text-3xl font-black leading-[1.05] tracking-tight sm:text-4xl">
+              Lapor masalah kota, cepat dan jelas.
             </h2>
-
-            <p className="mt-3 max-w-sm text-sm font-medium leading-relaxed text-white/78">
-              Buat pengalaman smartphone yang benar-benar cepat: pilih kategori, ambil lokasi,
-              tambah foto kalau perlu, lalu kirim.
+            <p className="mt-3 max-w-xl text-sm font-medium leading-relaxed text-white/80 sm:text-base">
+              Dirancang untuk handphone dan desktop: satu klik ke form, satu klik ke area sekitar,
+              dan progress laporan langsung terlihat.
             </p>
 
-            <div className="mt-5 grid grid-cols-3 gap-2.5 text-left">
-              <div className="rounded-2xl border border-white/12 bg-white/10 p-3">
+            <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-3">
                 <MapPin className="h-4 w-4 text-accent-light" />
-                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
                   GPS
                 </p>
                 <p className="mt-1 text-xs font-semibold text-white">Deteksi cepat</p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-white/10 p-3">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-3">
                 <Camera className="h-4 w-4 text-accent-light" />
-                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
                   Foto
                 </p>
-                <p className="mt-1 text-xs font-semibold text-white">Opsional tapi berguna</p>
+                <p className="mt-1 text-xs font-semibold text-white">Dukungan visual</p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-white/10 p-3">
+              <div className="rounded-2xl border border-white/20 bg-white/10 p-3">
                 <FilePlus2 className="h-4 w-4 text-accent-light" />
-                <p className="mt-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
+                <p className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/70">
                   Form
                 </p>
-                <p className="mt-1 text-xs font-semibold text-white">Singkat dan jelas</p>
+                <p className="mt-1 text-xs font-semibold text-white">Super singkat</p>
               </div>
             </div>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Link
                 href="/lapor"
-                className="flex w-full items-center justify-center gap-3 rounded-[24px] bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.18em] text-primary-dark shadow-2xl shadow-black/20 transition hover:-translate-y-0.5"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3.5 text-sm font-black uppercase tracking-[0.17em] text-primary-dark shadow-2xl shadow-black/20 transition hover:-translate-y-0.5"
               >
                 Lapor Sekarang
                 <ArrowRight className="h-4 w-4" />
               </Link>
+              <Link
+                href="#feed"
+                className="flex items-center justify-center rounded-2xl border border-white/25 bg-white/10 px-4 py-3.5 text-sm font-black uppercase tracking-[0.17em] text-white transition hover:bg-white/15"
+              >
+                Lihat Sekitar
+              </Link>
+            </div>
+          </div>
+        </section>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Link
-                  href="#feed"
-                  className="rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-white/15"
-                >
-                  Lihat Sekitar
-                </Link>
-                {user ? (
-                  <Link
-                    href="/riwayat"
-                    className="rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white transition hover:bg-white/15"
-                  >
-                    Riwayat Saya
-                  </Link>
-                ) : (
-                  <div
-                    onClick={() => router.push('/login')}
-                    className="cursor-pointer rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em] text-white/50 transition hover:bg-white/15"
-                  >
-                    Riwayat Saya
-                  </div>
-                )}
+        <section className="space-y-5">
+          <div className="rounded-[26px] border border-white/70 bg-white/95 p-5 shadow-[0_25px_75px_-40px_rgba(15,23,42,0.48)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/70">
+                  Ringkasan Kota
+                </p>
+                <h3 className="mt-1 text-lg font-black tracking-tight text-foreground">
+                  Pantau dampak laporan warga
+                </h3>
+              </div>
+              <button
+                onClick={fetchStats}
+                disabled={isStatsLoading}
+                className="rounded-full border border-border bg-white p-2.5 text-muted shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-60"
+                aria-label="Muat ulang statistik"
+              >
+                <RefreshCw className={`h-4 w-4 ${isStatsLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2.5 sm:gap-3">
+              <div className="rounded-2xl bg-primary-light/60 p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70">
+                  Laporan
+                </p>
+                <p className="mt-2 text-xl font-black tracking-tight text-primary-dark sm:text-2xl">
+                  {isStatsLoading ? '...' : stats.reports}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-success-light/70 p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-success/70">
+                  Selesai
+                </p>
+                <p className="mt-2 text-xl font-black tracking-tight text-success sm:text-2xl">
+                  {isStatsLoading ? '...' : stats.resolved}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-accent-light/65 p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-dark/70">
+                  Dukungan
+                </p>
+                <p className="mt-2 text-xl font-black tracking-tight text-accent-dark sm:text-2xl">
+                  {isStatsLoading ? '...' : stats.votes}
+                </p>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="px-5 pt-5">
-        <div className="rounded-[28px] border border-white/60 bg-white/90 p-5 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.35)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/70">
-                Ringkasan Kota
-              </p>
-              <h3 className="mt-1 text-lg font-black tracking-tight text-foreground">
-                Pantau dampak laporan warga
-              </h3>
-            </div>
-            <button
-              onClick={fetchStats}
-              disabled={isStatsLoading}
-              className="rounded-full border border-border bg-white p-2.5 text-muted shadow-sm transition hover:border-primary hover:text-primary disabled:opacity-60"
-              aria-label="Muat ulang statistik"
+          <div className="grid grid-cols-2 gap-3">
+            {user ? (
+              <Link
+                href="/riwayat"
+                className="rounded-2xl border border-border bg-white px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-muted transition hover:border-primary hover:text-primary"
+              >
+                Riwayat Saya
+              </Link>
+            ) : (
+              <button
+                onClick={() => router.push('/login')}
+                className="rounded-2xl border border-border bg-white px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-muted transition hover:border-primary hover:text-primary"
+              >
+                Login Dulu
+              </button>
+            )}
+            <Link
+              href="/admin"
+              className="rounded-2xl border border-border bg-white px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-muted transition hover:border-primary hover:text-primary"
             >
-              <RefreshCw className={`h-4 w-4 ${isStatsLoading ? 'animate-spin' : ''}`} />
-            </button>
+              Admin
+            </Link>
           </div>
+        </section>
 
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <div className="rounded-[24px] bg-primary-light/60 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary/70">
-                Laporan
-              </p>
-              <p className="mt-2 text-2xl font-black tracking-tight text-primary-dark">
-                {isStatsLoading ? '...' : stats.reports}
-              </p>
-            </div>
-            <div className="rounded-[24px] bg-success-light/70 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-success/70">
-                Selesai
-              </p>
-              <p className="mt-2 text-2xl font-black tracking-tight text-success">
-                {isStatsLoading ? '...' : stats.resolved}
-              </p>
-            </div>
-            <div className="rounded-[24px] bg-accent-light/65 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-accent-dark/70">
-                Dukungan
-              </p>
-              <p className="mt-2 text-2xl font-black tracking-tight text-accent-dark">
-                {isStatsLoading ? '...' : stats.votes}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="feed" className="flex-1 px-5 pb-8 pt-5">
-        <div className="rounded-[32px] border border-white/60 bg-white/90 px-4 py-5 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.38)]">
-          <div className="mb-5 flex items-start justify-between gap-4 px-1">
+        <section
+          id="feed"
+          className="rounded-[30px] border border-white/70 bg-white/92 px-4 py-5 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.42)] lg:col-span-2 lg:px-6 lg:py-6"
+        >
+          <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/70">
                 Area Sekitar
               </p>
-              <h3 className="mt-1 text-lg font-black tracking-tight text-foreground">
+              <h3 className="mt-1 text-lg font-black tracking-tight text-foreground sm:text-xl">
                 Masalah yang butuh perhatian
               </h3>
             </div>
@@ -295,12 +326,11 @@ export default function Home() {
               Vote aktif
             </div>
           </div>
-
           <NearbyFeed />
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg px-4 pb-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg px-4 pb-4 md:hidden">
         <div className="pointer-events-auto grid grid-cols-[0.95fr_1.25fr_0.95fr] gap-3 rounded-[30px] border border-white/70 bg-white/95 p-3 shadow-[0_28px_90px_-36px_rgba(15,23,42,0.5)]">
           <Link
             href="/"
@@ -325,13 +355,13 @@ export default function Home() {
               Riwayat
             </Link>
           ) : (
-            <div
+            <button
               onClick={() => router.push('/login')}
-              className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted/50"
+              className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-[22px] px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-muted/60"
             >
               <History className="h-4 w-4" />
               Riwayat
-            </div>
+            </button>
           )}
         </div>
       </div>
