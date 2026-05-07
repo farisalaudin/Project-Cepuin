@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   },
   description:
     "Platform crowdsourced untuk melaporkan masalah infrastruktur kota. Lapor dalam 60 detik, tanpa daftar. Jalan berlubang, lampu mati, banjir — semua bisa dilaporkan.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
   keywords: [
     "lapor infrastruktur",
     "jalan berlubang",
