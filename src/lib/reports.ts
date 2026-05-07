@@ -4,7 +4,31 @@
 
 import { supabase } from './supabase/client'
 import { DUPLICATE_RADIUS_METERS, getDistanceInMeters } from './geo'
-import type { Report, ReportCategory } from '@/types'
+import type {
+  ApiResponse,
+  CreateReportInput,
+  Report,
+  ReportCategory,
+  ReportStatus,
+} from '@/types'
+
+const parseApiResponse = async <T>(response: Response): Promise<T> => {
+  const payload = (await response.json()) as ApiResponse<T>
+
+  if (!response.ok || !payload.ok) {
+    const message = payload.ok ? 'Terjadi kesalahan sistem.' : payload.error.message
+    const error = new Error(message)
+    ;(error as Error & { code?: string; details?: unknown }).code = payload.ok
+      ? 'HTTP_ERROR'
+      : payload.error.code
+    ;(error as Error & { code?: string; details?: unknown }).details = payload.ok
+      ? null
+      : payload.error.details
+    throw error
+  }
+
+  return payload.data
+}
 
 /**
  * Find reports near a given location that might be duplicates.
@@ -109,25 +133,39 @@ export const getLatestReports = async (limit: number = 20): Promise<Report[]> =>
 /**
  * Create a new report in the database.
  */
-export const createReport = async (reportData: Partial<Report>) => {
-  const { data, error } = await supabase
-    .from('reports')
-    .insert(reportData)
-    .select()
-    .single()
+export const createReport = async (reportData: CreateReportInput): Promise<Report> => {
+  const response = await fetch('/api/reports', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(reportData),
+  })
 
-  if (error) throw error
-  return data as Report
+  return parseApiResponse<Report>(response)
 }
 
 /**
- * Delete a report from the database.
+ * Atomically update a report status and write the audit trail entry.
  */
-export const deleteReport = async (reportId: string) => {
-  const { error } = await supabase
-    .from('reports')
-    .delete()
-    .eq('id', reportId)
+export const updateReportStatus = async (
+  reportId: string,
+  status: ReportStatus,
+  assignedTo?: string | null,
+  note?: string | null
+): Promise<Report> => {
+  const response = await fetch(`/api/admin/reports/${reportId}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      status,
+      assignedTo: assignedTo?.trim() || null,
+      note: note?.trim() || null,
+    }),
+  })
 
-  if (error) throw error
+  return parseApiResponse<Report>(response)
 }
+

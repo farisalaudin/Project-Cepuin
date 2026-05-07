@@ -231,6 +231,167 @@ begin
 end;
 $$;
 
+create or replace function public.is_admin_actor()
+returns boolean
+language sql
+stable
+as $$
+  select
+    auth.role() = 'service_role'
+    or auth.jwt() ->> 'email' in ('admin@cepuin.id', 'test@admin.com');
+$$;
+
+create or replace function public.submit_report(
+  report_category text,
+  report_description text,
+  report_photo_url text,
+  report_lat double precision,
+  report_lng double precision,
+  report_address text
+)
+returns public.reports
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_report public.reports;
+begin
+  insert into public.reports (
+    user_id,
+    category,
+    description,
+    photo_url,
+    lat,
+    lng,
+    address,
+    status,
+    vote_count
+  )
+  values (
+    auth.uid(),
+    report_category,
+    nullif(btrim(report_description), ''),
+    nullif(btrim(report_photo_url), ''),
+    report_lat,
+    report_lng,
+    nullif(btrim(report_address), ''),
+    'dilaporkan',
+    0
+  )
+  returning * into new_report;
+
+  return new_report;
+end;
+$$;
+
+create or replace function public.submit_vote(
+  target_report_id uuid,
+  actor_session_id text default null
+)
+returns public.reports
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized_session_id text;
+  updated_report public.reports;
+begin
+  normalized_session_id := nullif(btrim(actor_session_id), '');
+
+  if auth.uid() is null and normalized_session_id is null then
+    raise exception 'Session anonim wajib dikirim untuk vote.'
+      using errcode = 'P0001';
+  end if;
+
+  insert into public.votes (report_id, user_id, session_id)
+  values (
+    target_report_id,
+    auth.uid(),
+    case when auth.uid() is null then normalized_session_id else null end
+  );
+
+  select *
+  into updated_report
+  from public.reports
+  where id = target_report_id;
+
+  return updated_report;
+end;
+$$;
+
+create or replace function public.admin_update_report_status(
+  target_report_id uuid,
+  target_status text,
+  actor_assigned_to text default null,
+  actor_note text default null
+)
+returns public.reports
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  previous_status text;
+  effective_note text;
+  updated_report public.reports;
+  actor_email text;
+begin
+  if not public.is_admin_actor() then
+    raise exception 'Akses admin ditolak.'
+      using errcode = '42501';
+  end if;
+
+  actor_email := coalesce(auth.jwt() ->> 'email', 'Admin');
+  effective_note := nullif(btrim(actor_note), '');
+
+  select status
+  into previous_status
+  from public.reports
+  where id = target_report_id
+  for update;
+
+  if previous_status is null then
+    raise exception 'Laporan tidak ditemukan.'
+      using errcode = 'P0002';
+  end if;
+
+  if effective_note is null then
+    effective_note := case
+      when nullif(btrim(actor_assigned_to), '') is not null
+        then 'Petugas ditunjuk: ' || btrim(actor_assigned_to)
+      else 'Status diperbarui ke ' || target_status
+    end;
+  end if;
+
+  update public.reports
+  set
+    status = target_status,
+    assigned_to = nullif(btrim(actor_assigned_to), ''),
+    updated_at = now()
+  where id = target_report_id
+  returning * into updated_report;
+
+  insert into public.status_history (
+    report_id,
+    old_status,
+    new_status,
+    changed_by,
+    note
+  )
+  values (
+    target_report_id,
+    previous_status,
+    target_status,
+    actor_email,
+    effective_note
+  );
+
+  return updated_report;
+end;
+$$;
+
 drop trigger if exists trigger_reports_set_initial_urgency on public.reports;
 create trigger trigger_reports_set_initial_urgency
 before insert on public.reports
@@ -272,23 +433,8 @@ for select
 using (true);
 
 drop policy if exists "Anyone can insert reports" on public.reports;
-create policy "Anyone can insert reports"
-on public.reports
-for insert
-with check (true);
 
 drop policy if exists "Admin can update reports" on public.reports;
-create policy "Admin can update reports"
-on public.reports
-for update
-using (
-  auth.role() = 'service_role'
-  or auth.jwt() ->> 'email' in ('admin@cepuin.id', 'test@admin.com')
-)
-with check (
-  auth.role() = 'service_role'
-  or auth.jwt() ->> 'email' in ('admin@cepuin.id', 'test@admin.com')
-);
 
 drop policy if exists "Anyone can read votes" on public.votes;
 create policy "Anyone can read votes"
@@ -297,10 +443,6 @@ for select
 using (true);
 
 drop policy if exists "Anyone can vote" on public.votes;
-create policy "Anyone can vote"
-on public.votes
-for insert
-with check (true);
 
 drop policy if exists "Anyone can read status history" on public.status_history;
 create policy "Anyone can read status history"
@@ -309,13 +451,6 @@ for select
 using (true);
 
 drop policy if exists "Admin can insert status history" on public.status_history;
-create policy "Admin can insert status history"
-on public.status_history
-for insert
-with check (
-  auth.role() = 'service_role'
-  or auth.jwt() ->> 'email' in ('admin@cepuin.id', 'test@admin.com')
-);
 
 drop policy if exists "Users can read own profile" on public.user_profiles;
 create policy "Users can read own profile"
@@ -376,7 +511,31 @@ for select
 using (bucket_id = 'photos');
 
 drop policy if exists "Anyone can upload photos" on storage.objects;
-create policy "Anyone can upload photos"
+drop policy if exists "Anonymous can upload photos" on storage.objects;
+drop policy if exists "Authenticated can upload photos" on storage.objects;
+drop policy if exists "Allow owner to update photos" on storage.objects;
+drop policy if exists "Allow owner to delete photos" on storage.objects;
+drop policy if exists "Users can update their own photos." on storage.objects;
+drop policy if exists "Users can delete their own photos." on storage.objects;
+
+create policy "Anonymous can upload photos"
 on storage.objects
 for insert
-with check (bucket_id = 'photos');
+to anon
+with check (
+  bucket_id = 'photos'
+  and lower(storage.extension(name)) = 'jpg'
+  and array_length(storage.foldername(name), 1) = 1
+  and storage.foldername(name)[1] ~ '^[0-9a-fA-F-]{36}$'
+);
+
+create policy "Authenticated can upload photos"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'photos'
+  and lower(storage.extension(name)) = 'jpg'
+  and array_length(storage.foldername(name), 1) = 1
+  and storage.foldername(name)[1] ~ '^[0-9a-fA-F-]{36}$'
+);

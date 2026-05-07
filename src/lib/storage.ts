@@ -11,15 +11,12 @@ import { supabase } from './supabase/client'
  * @returns Public URL of the uploaded photo
  */
 export const uploadReportPhoto = async (file: File, reportId: string) => {
-  // Compress before upload (target < 800KB)
-  const compressedFile = await compressImage(file)
-
   // Always save as jpg to match compressed output and bucket MIME policy.
   const fileName = `${reportId}/${Date.now()}.jpg`
 
   const { error } = await supabase.storage
     .from('photos')
-    .upload(fileName, compressedFile, {
+    .upload(fileName, file, {
       contentType: 'image/jpeg',
       upsert: false,
     })
@@ -34,53 +31,4 @@ export const uploadReportPhoto = async (file: File, reportId: string) => {
     .getPublicUrl(fileName)
 
   return urlData.publicUrl
-}
-
-/**
- * Simple client-side image compression using Canvas API.
- * Resizes image to max 1200px and reduces quality to 0.75.
- */
-const compressImage = (file: File): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
-
-    img.onerror = () => {
-      reject(new Error('Gagal memproses gambar. File mungkin rusak atau tidak didukung.'))
-    }
-
-    img.onload = () => {
-      let { width, height } = img
-      const maxDim = 1200
-
-      if (width > maxDim || height > maxDim) {
-        if (width > height) {
-          height = (height / width) * maxDim
-          width = maxDim
-        } else {
-          width = (width / height) * maxDim
-          height = maxDim
-        }
-      }
-
-      canvas.width = width
-      canvas.height = height
-      ctx.drawImage(img, 0, 0, width, height)
-
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error('Gagal mengompres gambar.'))
-            return
-          }
-          resolve(new File([blob], file.name, { type: 'image/jpeg' }))
-        },
-        'image/jpeg',
-        0.75
-      )
-    }
-
-    img.src = URL.createObjectURL(file)
-  })
 }

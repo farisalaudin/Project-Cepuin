@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { Camera, Image as ImageIcon, X, Loader2 } from 'lucide-react'
+import { prepareImageForUpload } from '@/lib/images'
 
 interface PhotoUploadProps {
   onPhotoSelected: (file: File | null) => void
@@ -11,32 +12,62 @@ interface PhotoUploadProps {
 export default function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState<string | null>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
+  const lastPreviewUrlRef = useRef<string | null>(null)
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setIsProcessing(true)
+    setError(null)
     try {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPreview(reader.result as string)
-        onPhotoSelected(file)
-        setIsProcessing(false)
+      const preparedAsset = await prepareImageForUpload(file)
+
+      if (lastPreviewUrlRef.current) {
+        URL.revokeObjectURL(lastPreviewUrlRef.current)
       }
-      reader.readAsDataURL(file)
+
+      lastPreviewUrlRef.current = preparedAsset.previewUrl
+      setPreview(preparedAsset.previewUrl)
+      onPhotoSelected(preparedAsset.file)
     } catch (err) {
       console.error('Error processing image:', err)
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Gagal memproses gambar. Coba format lain seperti JPG atau PNG.'
+      setError(message)
+      setPreview(null)
+      onPhotoSelected(null)
+      if (cameraInputRef.current) cameraInputRef.current.value = ''
+      if (galleryInputRef.current) galleryInputRef.current.value = ''
+    } finally {
       setIsProcessing(false)
     }
   }
 
   const removePhoto = () => {
+    if (lastPreviewUrlRef.current) {
+      URL.revokeObjectURL(lastPreviewUrlRef.current)
+      lastPreviewUrlRef.current = null
+    }
     setPreview(null)
+    setError(null)
     onPhotoSelected(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    if (cameraInputRef.current) cameraInputRef.current.value = ''
+    if (galleryInputRef.current) galleryInputRef.current.value = ''
   }
+
+  useEffect(() => {
+    return () => {
+      if (lastPreviewUrlRef.current) {
+        URL.revokeObjectURL(lastPreviewUrlRef.current)
+      }
+    }
+  }, [])
 
   return (
     <div className="space-y-3">
@@ -47,11 +78,13 @@ export default function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
       {preview ? (
         <div className="relative group w-full aspect-video rounded-2xl overflow-hidden border-2 border-primary shadow-lg">
           <Image
-              src={preview}
-              alt="Preview"
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+            src={preview}
+            alt="Preview foto laporan"
+            fill
+            unoptimized
+            sizes="(max-width: 768px) 100vw, 720px"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
           <button
             type="button"
             onClick={removePhoto}
@@ -67,7 +100,7 @@ export default function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => cameraInputRef.current?.click()}
             disabled={isProcessing}
             className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border bg-white text-muted hover:border-primary-light hover:bg-muted-light transition-all duration-200 group active:scale-95"
           >
@@ -81,7 +114,7 @@ export default function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
 
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => galleryInputRef.current?.click()}
             disabled={isProcessing}
             className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border bg-white text-muted hover:border-primary-light hover:bg-muted-light transition-all duration-200 group active:scale-95"
           >
@@ -100,11 +133,23 @@ export default function PhotoUpload({ onPhotoSelected }: PhotoUploadProps) {
         accept="image/*"
         capture="environment"
         className="hidden"
-        ref={fileInputRef}
+        ref={cameraInputRef}
         onChange={handleFileChange}
       />
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        ref={galleryInputRef}
+        onChange={handleFileChange}
+      />
+      {error ? (
+        <p className="text-[10px] font-semibold text-danger">
+          {error}
+        </p>
+      ) : null}
       <p className="text-[10px] text-muted italic">
-        * Foto otomatis dikompres sebelum upload untuk hemat kuota.
+        * Foto akan dinormalisasi otomatis agar lebih kompatibel saat pratinjau dan upload.
       </p>
     </div>
   )

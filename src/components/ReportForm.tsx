@@ -14,9 +14,7 @@ import {
 import { Report, ReportCategory } from '@/types'
 import { createReport, findNearbyDuplicates } from '@/lib/reports'
 import { uploadReportPhoto } from '@/lib/storage'
-import { calculateUrgencyScore } from '@/lib/urgency'
 import { submitVote } from '@/lib/votes'
-import { supabase } from '@/lib/supabase/client'
 import CategorySelect from './CategorySelect'
 import PhotoUpload from './PhotoUpload'
 import LocationDetect from './LocationDetect'
@@ -75,14 +73,9 @@ export default function ReportForm() {
     let newReport: Report | null = null
 
     try {
-      // 0. Get user session if exists
-      const { data: { user } } = await supabase.auth.getUser()
-
-      // 1. Prepare report ID and optional photo URL first.
+      // Prepare upload path and optional photo URL first.
       setSubmissionStatus('Menyimpan data laporan...')
-      const now = new Date().toISOString()
-      const initialUrgency = calculateUrgencyScore(0, category as ReportCategory, now)
-      const reportDraftId = crypto.randomUUID()
+      const uploadFolderId = crypto.randomUUID()
       let photoUrl: string | null = null
 
       if (photo) {
@@ -91,27 +84,22 @@ export default function ReportForm() {
           await new Promise(r => setTimeout(r, 500))
 
           setSubmissionStatus('Mengunggah foto ke server...')
-          photoUrl = await uploadReportPhoto(photo, reportDraftId)
+          photoUrl = await uploadReportPhoto(photo, uploadFolderId)
         } catch (photoErr) {
           console.error('Photo upload warning:', photoErr)
-          setPhotoWarning('Foto gagal diunggah, tapi laporan utama sudah berhasil terkirim.')
+          setPhotoWarning('Foto gagal diunggah. Laporan tetap akan dikirim tanpa foto.')
           setSubmissionStatus('Menyimpan laporan tanpa foto...')
         }
       }
 
-      // 2. Create report once (with photo_url if upload succeeded)
+      // Create the report through the secured RPC so users cannot spoof internal fields.
       newReport = await createReport({
-        id: reportDraftId,
         category: category as ReportCategory,
         description,
         photo_url: photoUrl,
         lat: location.lat,
         lng: location.lng,
         address: location.address,
-        status: 'dilaporkan',
-        urgency_score: initialUrgency,
-        vote_count: 0,
-        user_id: user?.id || null, // Link to user if logged in
       })
 
       setSubmissionStatus('Selesai!')
@@ -119,7 +107,11 @@ export default function ReportForm() {
       setIsSuccess(true)
     } catch (err) {
       console.error('Submission error:', err)
-      const message = (err as Error).message || 'Terjadi kesalahan sistem.'
+      const typedError = err as Error & { code?: string; details?: unknown }
+      if (typedError.code === 'DUPLICATE_REPORT' && Array.isArray(typedError.details)) {
+        setDuplicates(typedError.details as Report[])
+      }
+      const message = typedError.message || 'Terjadi kesalahan sistem.'
       alert(`Gagal mengirim laporan: ${message}`)
     } finally {
       setIsSubmitting(false)

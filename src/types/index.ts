@@ -53,6 +53,47 @@ export interface StatusHistory {
   created_at: string
 }
 
+export interface CreateReportInput {
+  category: ReportCategory
+  description?: string | null
+  photo_url?: string | null
+  lat: number
+  lng: number
+  address?: string | null
+}
+
+export interface UpdateReportStatusInput {
+  status: ReportStatus
+  assignedTo?: string | null
+  note?: string | null
+}
+
+export interface ApiErrorPayload {
+  code: string
+  message: string
+  requestId?: string
+  details?: unknown
+}
+
+export interface ApiSuccessResponse<T> {
+  ok: true
+  data: T
+  requestId: string
+}
+
+export interface ApiErrorResponse {
+  ok: false
+  error: ApiErrorPayload
+}
+
+export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse
+
+export interface SearchLocationResult {
+  lat: string
+  lon: string
+  display_name: string
+}
+
 // Category display info for UI
 export interface CategoryInfo {
   value: ReportCategory

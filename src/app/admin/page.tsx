@@ -17,6 +17,7 @@ import {
 import { Report, STATUSES, ReportStatus } from '@/types'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/cn'
+import { updateReportStatus } from '@/lib/reports'
 import Image from 'next/image'
 
 export default function AdminDashboard() {
@@ -27,6 +28,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<ReportStatus | 'all'>('all')
   const [petugasName, setPetugasName] = useState('')
+  const [statusNote, setStatusNote] = useState('')
 
   const fetchReports = useCallback(async () => {
     setIsLoading(true)
@@ -62,34 +64,17 @@ export default function AdminDashboard() {
   const handleUpdateStatus = async (id: string, newStatus: ReportStatus) => {
     setIsUpdating(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const adminEmail = user?.email || 'Admin'
-
-      const { error } = await supabase
-        .from('reports')
-        .update({ 
-          status: newStatus, 
-          updated_at: new Date().toISOString(),
-          assigned_to: petugasName || null 
-        })
-        .eq('id', id)
-      
-      if (error) throw error
-      
-      // Add to status_history
-      await supabase.from('status_history').insert({
-        report_id: id,
-        old_status: selectedReport?.status,
-        new_status: newStatus,
-        changed_by: adminEmail,
-        note: petugasName ? `Petugas ditunjuk: ${petugasName}` : `Status diperbarui ke ${newStatus}`
-      })
-
+      await updateReportStatus(id, newStatus, petugasName, statusNote)
       setSelectedReport(null)
       setPetugasName('')
-      fetchReports()
-    } catch {
-      alert('Gagal mengupdate status.')
+      setStatusNote('')
+      await fetchReports()
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Gagal mengupdate status.'
+      alert(message)
     } finally {
       setIsUpdating(false)
     }
@@ -265,7 +250,11 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-5 text-right">
                         <button 
-                          onClick={() => setSelectedReport(report)}
+                          onClick={() => {
+                            setSelectedReport(report)
+                            setPetugasName(report.assigned_to ?? '')
+                            setStatusNote('')
+                          }}
                           className="p-2 rounded-xl bg-white border border-border text-muted hover:text-primary hover:border-primary transition-all active:scale-95 group-hover:shadow-md"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -300,7 +289,11 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <button 
-                onClick={() => setSelectedReport(null)}
+                onClick={() => {
+                  setSelectedReport(null)
+                  setPetugasName('')
+                  setStatusNote('')
+                }}
                 className="p-3 rounded-2xl bg-muted-light text-muted hover:bg-border transition-all active:scale-95"
               >
                 <X className="w-6 h-6" />
@@ -367,6 +360,21 @@ export default function AdminDashboard() {
                       onChange={(e) => setPetugasName(e.target.value)}
                       className="w-full px-4 py-3 bg-white rounded-2xl border border-border focus:border-primary focus:outline-none transition-all text-sm font-bold text-foreground"
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1 mb-2 block">
+                      Catatan Status
+                    </label>
+                    <textarea
+                      placeholder="Tulis alasan penolakan atau catatan singkat update..."
+                      value={statusNote}
+                      onChange={(e) => setStatusNote(e.target.value.slice(0, 240))}
+                      className="min-h-28 w-full resize-none rounded-2xl border border-border bg-white px-4 py-3 text-sm font-medium text-foreground transition-all focus:border-primary focus:outline-none"
+                    />
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-muted/60">
+                      Wajib diisi saat status diubah ke Ditolak
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

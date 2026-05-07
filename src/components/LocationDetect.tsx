@@ -5,6 +5,7 @@ import { MapPin, Loader2, RefreshCw, AlertCircle, Search, X } from 'lucide-react
 import { getCurrentLocation, reverseGeocode, searchLocation } from '@/lib/geo'
 import { cn } from '@/lib/cn'
 import dynamic from 'next/dynamic'
+import type { SearchLocationResult } from '@/types'
 
 // Dynamically import Leaflet Map to avoid SSR issues
 const MapPreview = dynamic(() => import('./MapPreview'), { 
@@ -16,12 +17,6 @@ interface LocationDetectProps {
   onLocationFound: (lat: number, lng: number, address: string) => void
 }
 
-export interface SearchResult {
-  lat: string;
-  lon: string;
-  display_name: string;
-}
-
 export default function LocationDetect({ onLocationFound }: LocationDetectProps) {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [address, setAddress] = useState<string>('')
@@ -30,7 +25,7 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchResults, setSearchResults] = useState<SearchLocationResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -86,7 +81,7 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
     }
   }
 
-  const handleSelectLocation = (result: SearchResult) => {
+  const handleSelectLocation = (result: SearchLocationResult) => {
     const lat = parseFloat(result.lat)
     const lng = parseFloat(result.lon)
     const addr = result.display_name
