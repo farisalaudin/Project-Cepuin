@@ -1,0 +1,59 @@
+# Cepuin — Setup Guide untuk Developer/Agent
+
+## Untuk AI Agent: Baca Dulu!
+
+Sebelum melakukan apapun, baca file ini sesuai urutan:
+1. `AGENTS.md` — master contract & larangan keras
+2. `GEMINI.md` — config Antigravity
+3. `agent_docs/project_brief.md` — konteks produk
+4. `agent_docs/tech_stack.md` — setup teknis
+5. `agent_docs/features.md` — spesifikasi fitur
+
+## Quick Start
+
+```bash
+# 1. Clone & install
+git clone [repo-url] cepuin
+cd cepuin
+npm install
+
+# 2. Setup environment
+cp .env.example .env.local
+# Edit .env.local dengan keys dari Supabase
+
+# 3. Run database schema
+# Buka Supabase Dashboard -> SQL Editor
+# Paste schema dari AGENTS.md -> Run
+
+# 4. Start development
+npm run dev
+# Buka http://localhost:3000
+```
+
+## Environment Variables
+
+```
+NEXT_PUBLIC_SUPABASE_URL=     # dari Supabase: Settings -> API
+NEXT_PUBLIC_SUPABASE_ANON_KEY= # dari Supabase: Settings -> API
+NEXT_PUBLIC_GA_ID=            # dari Google Analytics (opsional)
+```
+
+## Perintah
+
+| Command | Fungsi |
+|---------|--------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build untuk production |
+| `npm run lint` | Cek ESLint errors |
+| `npm run type-check` | Cek TypeScript errors |
+
+## Stack
+
+- Next.js 14 (App Router) + TypeScript
+- Tailwind CSS
+- Supabase (Database + Auth + Storage)
+- Leaflet.js (Maps, gratis)
+- Vercel (Hosting, gratis)
+
+---
+*Cepuin MVP | 2 April 2026*
