@@ -46,8 +46,11 @@ export const matchWilayahId = async (
 
 export const getReportsByWilayah = async (
   wilayahId: string,
-  limit = 20
+  limit = 20,
+  centerLat?: number,
+  centerLng?: number
 ): Promise<Report[]> => {
+  // Primary: reports yang sudah ter-assign ke wilayah ini
   const { data, error } = await supabase
     .from('reports')
     .select('*')
@@ -60,7 +63,30 @@ export const getReportsByWilayah = async (
     return []
   }
 
-  return (data as Report[]) ?? []
+  const primary = (data as Report[]) ?? []
+
+  // Jika ada sisa slot DAN ada koordinat center → ambil laporan terdekat yg wilayah_id-nya null
+  const remaining = limit - primary.length
+  if (remaining <= 0 || !centerLat || !centerLng) return primary
+
+  // Bounding box ~30km untuk cover wilayah yang sama
+  const RADIUS_DEG = 0.27
+  const { data: nullData, error: nullError } = await supabase
+    .from('reports')
+    .select('*')
+    .is('wilayah_id', null)
+    .gte('lat', centerLat - RADIUS_DEG)
+    .lte('lat', centerLat + RADIUS_DEG)
+    .gte('lng', centerLng - RADIUS_DEG)
+    .lte('lng', centerLng + RADIUS_DEG)
+    .order('urgency_score', { ascending: false })
+    .limit(remaining)
+
+  if (nullError) return primary
+
+  const nearby = (nullData as Report[]) ?? []
+  const primaryIds = new Set(primary.map((r) => r.id))
+  return [...primary, ...nearby.filter((r) => !primaryIds.has(r.id))]
 }
 
 export const getWilayahStats = async (

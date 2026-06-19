@@ -1,13 +1,14 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, Info } from 'lucide-react'
+import { ChevronLeft, Info, X } from 'lucide-react'
 import ReportForm from '@/components/ReportForm'
 
 export default function LaporPage() {
   const router = useRouter()
+  const [showTip, setShowTip] = useState(false)
 
   return (
     <main className="min-h-screen bg-background pb-12">
@@ -30,11 +31,20 @@ export default function LaporPage() {
 
           <button
             className="rounded-xl border border-border bg-white p-2.5 text-primary transition-all hover:bg-primary-light/50"
-            onClick={() => alert('Tips: isi kategori, lokasi, lalu kirim. Foto opsional.')}
+            onClick={() => setShowTip((v) => !v)}
+            aria-label="Tips pengisian"
           >
-            <Info className="h-5 w-5" />
+            {showTip ? <X className="h-5 w-5" /> : <Info className="h-5 w-5" />}
           </button>
         </div>
+
+        {showTip && (
+          <div className="animate-in slide-in-from-top-2 fade-in duration-200 border-t border-primary/10 bg-primary-light/30 px-4 py-3 sm:px-6 lg:px-10">
+            <p className="text-xs font-bold text-primary-dark">
+              💡 <strong>Tips:</strong> Isi kategori → pilih lokasi → foto opsional → kirim. Laporan tanpa login tetap bisa dikirim!
+            </p>
+          </div>
+        )}
       </header>
 
       <div className="mx-auto mt-5 w-full max-w-6xl px-4 sm:px-6 lg:px-10">

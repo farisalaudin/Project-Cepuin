@@ -23,6 +23,7 @@ import { cn } from '@/lib/cn'
 import { useRouter } from 'next/navigation'
 import { submitVote } from '@/lib/votes'
 import { formatTimeAgo } from '@/lib/utils'
+import { useToast } from '@/components/ui/Toast'
 
 interface ReportCardProps {
   report: Report
@@ -41,6 +42,7 @@ const iconMap: Record<string, LucideIcon> = {
 
 export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
   const router = useRouter()
+  const toast = useToast()
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
 
@@ -74,7 +76,7 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
       setHasVoted(true)
       onVoteSuccess?.(report.id)
     } catch (err) {
-      alert((err as Error).message)
+      toast((err as Error).message, 'error')
     } finally {
       setIsVoting(false)
     }

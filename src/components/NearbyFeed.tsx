@@ -18,6 +18,7 @@ export default function NearbyFeed() {
   const [reports, setReports] = useState<Report[]>([])
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [address, setAddress] = useState<string>('Sekitar Kamu')
   const [isFallback, setIsFallback] = useState(false)
   const [wilayahList, setWilayahList] = useState<Wilayah[]>([])
@@ -38,6 +39,7 @@ export default function NearbyFeed() {
     } else {
       setIsRefreshing(true)
     }
+    setFetchError(null)
 
     try {
       let fallbackMode = false
@@ -60,7 +62,9 @@ export default function NearbyFeed() {
           nextWilayahId = await matchWilayahId(geocode, wilayahList)
           const matchedWilayah = wilayahList.find((wilayah) => wilayah.id === nextWilayahId)
           nextAddress = matchedWilayah?.nama ?? geocode.kabupaten ?? 'Wilayah Belum Terdaftar'
-          data = nextWilayahId ? await getReportsByWilayah(nextWilayahId) : await getLatestReports()
+          data = nextWilayahId
+            ? await getReportsByWilayah(nextWilayahId, 20, pos.latitude, pos.longitude)
+            : await getLatestReports()
         } catch (geoErr) {
           console.warn('GPS failed, falling back to latest reports:', geoErr)
           fallbackMode = true
@@ -80,6 +84,9 @@ export default function NearbyFeed() {
       }
     } catch (err) {
       console.error('Feed fetch error:', err)
+      if (requestId === latestRequestRef.current) {
+        setFetchError('Gagal memuat laporan. Periksa koneksi internet kamu.')
+      }
     } finally {
       if (requestId === latestRequestRef.current) {
         hasLoadedRef.current = true
@@ -100,7 +107,7 @@ export default function NearbyFeed() {
         const matchedWilayahId = await matchWilayahId(geocode, wilayah)
         const matchedWilayah = wilayah.find((item) => item.id === matchedWilayahId)
         const data = matchedWilayahId
-          ? await getReportsByWilayah(matchedWilayahId)
+          ? await getReportsByWilayah(matchedWilayahId, 20, pos.latitude, pos.longitude)
           : await getLatestReports()
         setSelectedWilayahId(matchedWilayahId)
         setAddress(matchedWilayah?.nama ?? geocode.kabupaten ?? 'Wilayah Belum Terdaftar')
@@ -109,10 +116,15 @@ export default function NearbyFeed() {
         setReports(data)
       } catch (err) {
         console.warn('Initial feed used latest reports fallback:', err)
-        setIsFallback(true)
-        setAddress('Terbaru di Kotamu')
-        setReports(await getLatestReports())
-        setStats(await getWilayahStats(null))
+        try {
+          setIsFallback(true)
+          setAddress('Terbaru di Kotamu')
+          setReports(await getLatestReports())
+          setStats(await getWilayahStats(null))
+        } catch (innerErr) {
+          console.error('Feed completely failed:', innerErr)
+          setFetchError('Gagal memuat laporan. Periksa koneksi internet kamu.')
+        }
       } finally {
         hasLoadedRef.current = true
         setIsInitialLoading(false)
@@ -226,6 +238,21 @@ export default function NearbyFeed() {
         </div>
       ) : (
         <div className="space-y-6">
+          {fetchError && (
+            <div className="animate-in fade-in slide-in-from-top-2 flex items-center justify-between gap-3 rounded-2xl border border-danger/20 bg-danger-light/40 p-4 duration-300">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-danger" />
+                <p className="text-xs font-bold text-danger">{fetchError}</p>
+              </div>
+              <button
+                onClick={() => void fetchFeed({ forceLocation: true, keepCurrentList: false })}
+                className="shrink-0 rounded-xl bg-danger px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all active:scale-95"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          )}
+
           {isFallback && (
             <div className="animate-in fade-in slide-in-from-top-2 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary-light/30 p-4 duration-500">
               <div className="p-2 bg-white rounded-xl shadow-sm">

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   MapPin,
   Loader2,
-  RefreshCw,
   AlertCircle,
   CheckCircle2,
   Info,
@@ -130,6 +129,7 @@ export default function LocationDetect({ onLocationFound }: LocationDetectProps)
   // Initialize on mount
   useEffect(() => {
     if (!hasInitialized) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void initFromGPS()
     }
   }, [hasInitialized, initFromGPS])

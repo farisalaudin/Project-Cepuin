@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Sora } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -76,7 +77,7 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

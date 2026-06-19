@@ -59,6 +59,7 @@ export default function AdminDashboard() {
   }, [filterStatus])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchReports()
   }, [fetchReports])
 

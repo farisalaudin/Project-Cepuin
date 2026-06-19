@@ -20,6 +20,7 @@ export default function RiwayatPage() {
   const [user, setUser] = useState<User | null>(null)
   const [reports, setReports] = useState<Report[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('semua')
   const [sortBy, setSortBy] = useState<SortFilter>('created_at_desc')
   const [searchTerm, setSearchTerm] = useState('')
@@ -47,6 +48,7 @@ export default function RiwayatPage() {
       if (!user?.id) return
 
       setIsLoading(true)
+      setFetchError(null)
       try {
         let query = supabase
           .from('reports')
@@ -77,6 +79,7 @@ export default function RiwayatPage() {
         setReports((data as Report[]) ?? [])
       } catch (err) {
         console.error('Fetch reports error:', err)
+        setFetchError('Gagal memuat riwayat. Periksa koneksi internet kamu.')
       } finally {
         setIsLoading(false)
       }
@@ -187,6 +190,14 @@ export default function RiwayatPage() {
             <div className="flex min-h-[240px] flex-col items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="mt-3 text-xs font-bold uppercase tracking-widest text-muted/70">Memuat riwayat...</p>
+            </div>
+          ) : fetchError ? (
+            <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-danger-light">
+                <FileText className="h-7 w-7 text-danger" />
+              </div>
+              <p className="text-sm font-bold text-foreground">Gagal Memuat</p>
+              <p className="max-w-xs text-xs text-muted">{fetchError}</p>
             </div>
           ) : reports.length === 0 ? (
             <div className="flex min-h-[260px] flex-col items-center justify-center text-center">

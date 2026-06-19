@@ -9,8 +9,7 @@ import {
   Info,
   ChevronRight,
   ThumbsUp,
-  AlertCircle,
-  Star
+  AlertCircle
 } from 'lucide-react'
 import { DetectedLocation, Report, ReportCategory } from '@/types'
 import { createReport, findNearbyDuplicates } from '@/lib/reports'
@@ -21,21 +20,20 @@ import CategorySelect from './CategorySelect'
 import PhotoUpload from './PhotoUpload'
 import LocationDetect from './LocationDetect'
 import { cn } from '@/lib/cn'
+import { useToast } from '@/components/ui/Toast'
 
 export default function ReportForm() {
   const MAX_DESCRIPTION_LENGTH = 280
-  const MAX_FEEDBACK_LENGTH = 280
   const router = useRouter()
-  
+  const toast = useToast()
+
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<ReportCategory | ''>('')
   const [photo, setPhoto] = useState<File | null>(null)
   const [location, setLocation] = useState<DetectedLocation | null>(null)
   const [disclaimerAgreed, setDisclaimerAgreed] = useState(false)
-  
-  // Optional detailed fields from original form
-  const [rating, setRating] = useState<number>(0)
-  const [feedbackComment, setFeedbackComment] = useState('')
+  const [rating] = useState<number>(0)
+  const [feedbackComment] = useState('')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionStatus, setSubmissionStatus] = useState<string>('')
@@ -73,7 +71,7 @@ export default function ReportForm() {
       await submitVote(id)
       setVotedIds([...votedIds, id])
     } catch (err) {
-      alert((err as Error).message)
+      toast((err as Error).message, 'error')
     }
   }
 
@@ -149,7 +147,7 @@ export default function ReportForm() {
         setDuplicates(typedError.details as Report[])
       }
       const message = typedError.message || 'Terjadi kesalahan sistem.'
-      alert(`Gagal mengirim laporan: ${message}`)
+      toast(`Gagal mengirim: ${message}`, 'error')
     } finally {
       setIsSubmitting(false)
     }

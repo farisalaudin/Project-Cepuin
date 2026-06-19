@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/cn'
 import { submitVote } from '@/lib/votes'
 import { CATEGORIES, Report, STATUSES, StatusHistory } from '@/types'
+import { useToast } from '@/components/ui/Toast'
 
 const MapPreview = dynamic(() => import('@/components/MapPreview'), { ssr: false })
 
@@ -48,10 +49,12 @@ export default function LaporanDetailPage() {
   const router = useRouter()
 
   const reportId = Array.isArray(params.id) ? params.id[0] : params.id
+  const toast = useToast()
 
   const [report, setReport] = useState<Report | null>(null)
   const [history, setHistory] = useState<StatusHistory[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
 
@@ -62,6 +65,7 @@ export default function LaporanDetailPage() {
     }
 
     setIsLoading(true)
+    setFetchError(null)
     try {
       const { data: reportData, error: reportError } = await supabase
         .from('reports')
@@ -69,7 +73,14 @@ export default function LaporanDetailPage() {
         .eq('id', reportId)
         .single()
 
-      if (reportError) throw reportError
+      if (reportError) {
+        if (reportError.code === 'PGRST116') {
+          setReport(null)
+        } else {
+          setFetchError('Gagal memuat laporan. Periksa koneksi internet kamu.')
+        }
+        return
+      }
       setReport(reportData as Report)
 
       const { data: historyData } = await supabase
@@ -81,12 +92,14 @@ export default function LaporanDetailPage() {
       setHistory((historyData as StatusHistory[]) ?? [])
     } catch (err) {
       console.error('Fetch error:', err)
+      setFetchError('Terjadi kesalahan koneksi. Coba lagi.')
     } finally {
       setIsLoading(false)
     }
   }, [reportId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchData()
   }, [fetchData])
 
@@ -101,7 +114,7 @@ export default function LaporanDetailPage() {
       setHasVoted(true)
       await fetchData()
     } catch (err) {
-      alert((err as Error).message)
+      toast((err as Error).message, 'error')
     } finally {
       setIsVoting(false)
     }
@@ -127,7 +140,7 @@ export default function LaporanDetailPage() {
     }
 
     await navigator.clipboard.writeText(url)
-    alert('Link disalin ke clipboard!')
+    toast('Link berhasil disalin!', 'success')
   }
 
   if (isLoading) {
@@ -135,6 +148,32 @@ export default function LaporanDetailPage() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6">
         <Loader2 className="mb-4 h-10 w-10 animate-spin text-primary" />
         <p className="text-xs font-bold uppercase tracking-widest text-muted">Memuat detail laporan...</p>
+      </div>
+    )
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 text-center">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[32px] bg-danger-light">
+          <AlertTriangle className="h-10 w-10 text-danger" />
+        </div>
+        <h1 className="text-xl font-black uppercase tracking-tight text-foreground">Koneksi Bermasalah</h1>
+        <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted">{fetchError}</p>
+        <div className="mt-8 flex gap-3">
+          <button
+            onClick={() => void fetchData()}
+            className="rounded-2xl bg-primary px-6 py-3 font-bold text-white shadow-lg transition-all active:scale-95"
+          >
+            Coba Lagi
+          </button>
+          <button
+            onClick={() => router.push('/')}
+            className="rounded-2xl border border-border bg-white px-6 py-3 font-bold text-muted transition-all active:scale-95"
+          >
+            Beranda
+          </button>
+        </div>
       </div>
     )
   }

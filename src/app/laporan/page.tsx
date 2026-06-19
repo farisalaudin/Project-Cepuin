@@ -1,27 +1,11 @@
 'use client'
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { 
-  MapPin, 
-  Loader2, 
-  TrendingUp, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle,
-  LightbulbOff,
-  CloudRain,
-  Trash2,
-  Droplets,
-  Building2,
-  MoreHorizontal
-} from 'lucide-react'
-import { getWilayahStats, listWilayah, matchWilayahId } from '@/lib/wilayah'
+import React, { useEffect, useState } from 'react'
+import { MapPin, Loader2, AlertTriangle, AlertCircle, ArrowLeft } from 'lucide-react'
+import { getWilayahStats, listWilayah, matchWilayahId, getReportsByWilayah } from '@/lib/wilayah'
 import { getCurrentLocation, reverseGeocodeDetails } from '@/lib/geo'
-import { getReportsByWilayah } from '@/lib/wilayah'
 import { Report, Wilayah, WilayahStats, CATEGORIES } from '@/types'
-import { cn } from '@/lib/cn'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import ReportCard from '@/components/ReportCard'
 
 export default function LaporanPage() {
@@ -55,7 +39,7 @@ export default function LaporanPage() {
           setGpsStatus('Lokasi Anda di luar jangkauan wilayah terdaftar.')
           if (list.length > 0) setSelectedWilayah(list[0].id)
         }
-      } catch (err) {
+      } catch {
         setGpsStatus('Gagal mendeteksi lokasi otomatis.')
         if (list.length > 0) setSelectedWilayah(list[0].id)
       }
@@ -136,7 +120,12 @@ export default function LaporanPage() {
             </div>
             {gpsStatus && !selectedWilayah && (
               <p className="mt-2 text-[10px] font-bold text-accent-dark flex items-center gap-1.5">
-                <Loader2 className="w-3 h-3 animate-spin" /> {gpsStatus}
+                {gpsStatus.includes('Mendeteksi') || gpsStatus.includes('Mencocokkan') ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <AlertCircle className="w-3 h-3" />
+                )}
+                {gpsStatus}
               </p>
             )}
           </div>

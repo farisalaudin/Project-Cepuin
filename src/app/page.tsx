@@ -21,12 +21,14 @@ import { supabase } from '@/lib/supabase/client'
 export default function Home() {
   const [stats, setStats] = useState({ reports: 0, resolved: 0, votes: 0 })
   const [isStatsLoading, setIsStatsLoading] = useState(true)
+  const [statsError, setStatsError] = useState(false)
   const [user, setUser] = useState<User | null>(null)
 
   const router = useRouter()
 
   const fetchStats = useCallback(async () => {
     setIsStatsLoading(true)
+    setStatsError(false)
     try {
       const { count: reportCount } = await supabase
         .from('reports')
@@ -55,6 +57,7 @@ export default function Home() {
       })
     } catch (error) {
       console.error('Stats fetch error:', error)
+      setStatsError(true)
     } finally {
       setIsStatsLoading(false)
     }
@@ -88,6 +91,7 @@ export default function Home() {
     }
 
     void getUser()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchStats()
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -261,7 +265,7 @@ export default function Home() {
                   Laporan
                 </p>
                 <p className="mt-2 text-xl font-black tracking-tight text-primary-dark sm:text-2xl">
-                  {isStatsLoading ? '...' : stats.reports}
+                  {isStatsLoading ? '...' : statsError ? '—' : stats.reports}
                 </p>
               </div>
               <div className="rounded-2xl bg-success-light/70 p-3.5">
@@ -269,7 +273,7 @@ export default function Home() {
                   Selesai
                 </p>
                 <p className="mt-2 text-xl font-black tracking-tight text-success sm:text-2xl">
-                  {isStatsLoading ? '...' : stats.resolved}
+                  {isStatsLoading ? '...' : statsError ? '—' : stats.resolved}
                 </p>
               </div>
               <div className="rounded-2xl bg-accent-light/65 p-3.5">
@@ -277,7 +281,7 @@ export default function Home() {
                   Dukungan
                 </p>
                 <p className="mt-2 text-xl font-black tracking-tight text-accent-dark sm:text-2xl">
-                  {isStatsLoading ? '...' : stats.votes}
+                  {isStatsLoading ? '...' : statsError ? '—' : stats.votes}
                 </p>
               </div>
             </div>
