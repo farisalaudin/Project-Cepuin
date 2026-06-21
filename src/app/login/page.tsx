@@ -13,7 +13,8 @@ type AuthMode = 'login' | 'register'
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next') || '/riwayat'
+  const rawNext = searchParams.get('next') || '/riwayat'
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/riwayat'
 
   const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')

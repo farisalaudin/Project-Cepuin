@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  TrendingUp, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  Search, 
+  TrendingUp,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Search,
   Filter,
   ExternalLink,
   MapPin,
@@ -19,8 +19,10 @@ import { Report, STATUSES, ReportStatus } from '@/types'
 import { cn } from '@/lib/cn'
 import { getAdminReports, updateReportStatus } from '@/lib/reports'
 import Image from 'next/image'
+import { useToast } from '@/components/ui/Toast'
 
 export default function AdminDashboard() {
+  const toast = useToast()
   const [reports, setReports] = useState<Report[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -76,7 +78,7 @@ export default function AdminDashboard() {
         err instanceof Error && err.message
           ? err.message
           : 'Gagal mengupdate status.'
-      alert(message)
+      toast(message, 'error')
     } finally {
       setIsUpdating(false)
     }
@@ -240,7 +242,7 @@ export default function AdminDashboard() {
                       <td className="px-6 py-5">
                         <div className="space-y-0.5">
                           <p className="text-sm font-bold text-foreground capitalize">
-                            {report.category.replace('_', ' ')}
+                            {report.category.replaceAll('_', ' ')}
                           </p>
                           <p className="text-[10px] font-bold text-muted uppercase">
                             ID: {report.id.slice(0, 8)}

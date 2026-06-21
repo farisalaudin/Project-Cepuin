@@ -5,11 +5,10 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-lea
 import L, { type LeafletEventHandlerFnMap } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Fix default marker icon issue with Next.js/Leaflet
 const icon = L.icon({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+  iconUrl: '/leaflet/marker-icon.png',
+  shadowUrl: '/leaflet/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 })

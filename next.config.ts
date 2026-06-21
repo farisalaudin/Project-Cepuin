@@ -33,10 +33,15 @@ if (supabaseHostname && supabaseHostname !== '**.supabase.co') {
   })
 }
 
+const allowedDevOrigins = process.env.NEXT_PUBLIC_DEV_ORIGIN
+  ? [process.env.NEXT_PUBLIC_DEV_ORIGIN]
+  : []
+
 const nextConfig = {
   images: {
     remotePatterns,
   },
+  ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
 }
 
 export default nextConfig

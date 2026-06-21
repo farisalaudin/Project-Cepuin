@@ -30,25 +30,18 @@ export default function Home() {
     setIsStatsLoading(true)
     setStatsError(false)
     try {
-      const { count: reportCount } = await supabase
-        .from('reports')
-        .select('*', { count: 'exact', head: true })
-
-      const { count: resolvedCount } = await supabase
-        .from('reports')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'selesai')
-
-      const { data: voteData } = await supabase
-        .from('reports')
-        .select('vote_count')
+      const [
+        { count: reportCount },
+        { count: resolvedCount },
+        { data: voteAgg },
+      ] = await Promise.all([
+        supabase.from('reports').select('*', { count: 'exact', head: true }),
+        supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'selesai'),
+        supabase.from('reports').select('vote_count.sum()').single(),
+      ])
 
       const totalVotes =
-        voteData?.reduce(
-          (total: number, report: { vote_count: number | null }) =>
-            total + (report.vote_count || 0),
-          0
-        ) || 0
+        (voteAgg as { vote_count: { sum: number | null } } | null)?.vote_count?.sum ?? 0
 
       setStats({
         reports: reportCount || 0,

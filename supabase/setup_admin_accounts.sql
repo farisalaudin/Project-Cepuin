@@ -20,6 +20,7 @@ DECLARE
   v_kotamalang_id UUID;
   v_kabmalang_id  UUID;
   v_bekasi_id     UUID;
+  v_superadmin_id UUID;
 
   -- UUID wilayah (hardcoded dari query aktual)
   v_wil_kotamalang UUID := 'd02feea2-2683-4992-97c3-db6ebfaa67e3';
@@ -97,6 +98,30 @@ BEGIN
     RAISE NOTICE 'Akun sudah ada: kotabekasi@cepuin.id (ID: %)', v_bekasi_id;
   END IF;
 
+  -- Super Admin
+  -- PENTING: Ganti password di bawah sebelum menjalankan script ini di production!
+  -- Setelah deploy, segera ubah via Supabase Dashboard > Authentication > Users
+  SELECT id INTO v_superadmin_id FROM auth.users WHERE email = 'admin@cepuin.id';
+  IF v_superadmin_id IS NULL THEN
+    INSERT INTO auth.users (
+      id, instance_id, aud, role, email, encrypted_password,
+      email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+      is_sso_user, is_anonymous, created_at, updated_at
+    ) VALUES (
+      gen_random_uuid(),
+      '00000000-0000-0000-0000-000000000000',
+      'authenticated', 'authenticated',
+      'admin@cepuin.id',
+      crypt('C3pu1n$Admin#2026!', gen_salt('bf', 10)),
+      now(),
+      '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb,
+      false, false, now(), now()
+    ) RETURNING id INTO v_superadmin_id;
+    RAISE NOTICE 'Akun dibuat: admin@cepuin.id (ID: %)', v_superadmin_id;
+  ELSE
+    RAISE NOTICE 'Akun sudah ada: admin@cepuin.id (ID: %)', v_superadmin_id;
+  END IF;
+
   -- Admin Central (menerima SEMUA laporan)
   SELECT id INTO v_central_id FROM auth.users WHERE email = 'central@cepuin.id';
   IF v_central_id IS NULL THEN
@@ -123,10 +148,10 @@ BEGIN
   -- 2. Daftarkan ke admin_users (diperlukan untuk akses UI /admin)
   -- ----------------------------------------------------------
   INSERT INTO public.admin_users (user_id)
-  VALUES (v_kotamalang_id), (v_kabmalang_id), (v_bekasi_id), (v_central_id)
+  VALUES (v_kotamalang_id), (v_kabmalang_id), (v_bekasi_id), (v_central_id), (v_superadmin_id)
   ON CONFLICT (user_id) DO NOTHING;
 
-  RAISE NOTICE 'admin_users: 4 akun terdaftar (skip jika sudah ada)';
+  RAISE NOTICE 'admin_users: 5 akun terdaftar (skip jika sudah ada)';
 
   -- ----------------------------------------------------------
   -- 3. Pastikan admin table berisi email → wilayah mapping
@@ -136,13 +161,15 @@ BEGIN
     ('kotamalang@cepuin.id', v_wil_kotamalang),
     ('kabmalang@cepuin.id',  v_wil_kabmalang),
     ('kotabekasi@cepuin.id', v_wil_bekasi),
-    ('central@cepuin.id',    NULL)
+    ('central@cepuin.id',    NULL),
+    ('admin@cepuin.id',      NULL)
   ON CONFLICT (email) DO UPDATE
     SET wilayah_id = EXCLUDED.wilayah_id;
 
   RAISE NOTICE '=== SETUP SELESAI ===';
   RAISE NOTICE '';
   RAISE NOTICE 'Email                   Password                    Akses';
+  RAISE NOTICE 'admin@cepuin.id         C3pu1n$Admin#2026!          Semua wilayah (GANTI SEGERA)';
   RAISE NOTICE 'central@cepuin.id       CepuinCentral2026!Admin     Semua wilayah';
   RAISE NOTICE 'kotamalang@cepuin.id    CepuinKotaMalang2026!       Kota Malang';
   RAISE NOTICE 'kabmalang@cepuin.id     CepuinKabMalang2026!        Kab. Malang';
