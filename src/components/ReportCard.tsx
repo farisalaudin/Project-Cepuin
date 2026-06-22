@@ -46,6 +46,7 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
   const toast = useToast()
   const [isVoting, setIsVoting] = useState(false)
   const [hasVoted, setHasVoted] = useState(false)
+  const [voteCount, setVoteCount] = useState(report.vote_count)
 
   const categoryInfo = CATEGORIES.find(c => c.value === report.category)
   const statusInfo = STATUSES.find(s => s.value === report.status)
@@ -58,8 +59,9 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
 
     setIsVoting(true)
     try {
-      await submitVote(report.id)
+      const updated = await submitVote(report.id)
       setHasVoted(true)
+      setVoteCount(updated.vote_count)
       onVoteSuccess?.(report.id)
     } catch (err) {
       toast((err as Error).message, 'error')
@@ -132,7 +134,7 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
             </div>
             <div className="flex items-center gap-1.5">
               <Heart className="h-3 w-3 text-danger/60" />
-              {report.vote_count}
+              {voteCount}
             </div>
           </div>
 

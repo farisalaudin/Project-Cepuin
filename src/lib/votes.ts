@@ -10,7 +10,7 @@ import type { ApiResponse, Report } from '@/types'
  * 
  * @param reportId - ID of the report to vote for
  */
-export const submitVote = async (reportId: string) => {
+export const submitVote = async (reportId: string): Promise<Report> => {
   const response = await fetch(`/api/reports/${reportId}/vote`, {
     method: 'POST',
     credentials: 'same-origin',
@@ -25,4 +25,6 @@ export const submitVote = async (reportId: string) => {
     console.error('Vote error:', payload)
     throw new Error('Gagal memberikan dukungan. Silakan coba lagi.')
   }
+
+  return payload.data
 }

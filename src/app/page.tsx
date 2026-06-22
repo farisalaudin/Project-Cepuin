@@ -33,20 +33,17 @@ export default function Home() {
       const [
         { count: reportCount },
         { count: resolvedCount },
-        { data: voteAgg },
+        { count: voteCount },
       ] = await Promise.all([
         supabase.from('reports').select('*', { count: 'exact', head: true }),
         supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'selesai'),
-        supabase.from('reports').select('vote_count.sum()').single(),
+        supabase.from('votes').select('*', { count: 'exact', head: true }),
       ])
-
-      const totalVotes =
-        (voteAgg as { vote_count: { sum: number | null } } | null)?.vote_count?.sum ?? 0
 
       setStats({
         reports: reportCount || 0,
         resolved: resolvedCount || 0,
-        votes: totalVotes,
+        votes: voteCount || 0,
       })
     } catch (error) {
       console.error('Stats fetch error:', error)
