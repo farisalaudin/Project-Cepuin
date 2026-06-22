@@ -9,13 +9,15 @@ import {
   Info,
   ChevronRight,
   ThumbsUp,
-  AlertCircle
+  AlertCircle,
+  LogIn
 } from 'lucide-react'
 import { DetectedLocation, Report, ReportCategory } from '@/types'
 import { createReport, findNearbyDuplicates } from '@/lib/reports'
 import { uploadReportPhoto } from '@/lib/storage'
 import { submitVote } from '@/lib/votes'
 import { getReporterGPS } from '@/lib/getReporterGPS'
+import { supabase } from '@/lib/supabase/client'
 import CategorySelect from './CategorySelect'
 import PhotoUpload from './PhotoUpload'
 import LocationDetect from './LocationDetect'
@@ -42,6 +44,7 @@ export default function ReportForm() {
   const [duplicates, setDuplicates] = useState<Report[]>([])
   const [reportId, setReportId] = useState<string>('')
   const [votedIds, setVotedIds] = useState<string[]>([])
+  const [submittedAsGuest, setSubmittedAsGuest] = useState(false)
 
   const handleCategoryChange = async (cat: ReportCategory) => {
     setCategory(cat)
@@ -85,7 +88,11 @@ export default function ReportForm() {
     let newReport: Report | null = null
 
     try {
-      // 1. Silently get reporter's actual GPS for audit/risk calculation
+      // 1. Check auth status so we can warn the user in the success state
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      setSubmittedAsGuest(!currentUser)
+
+      // 2. Silently get reporter's actual GPS for audit/risk calculation
       const reporterGps = await getReporterGPS()
       
       // Prepare upload path and optional photo URL first.
@@ -165,8 +172,19 @@ export default function ReportForm() {
         <p className="text-sm text-muted mb-8 max-w-xs leading-relaxed">
           Terima kasih telah berkontribusi menjaga kota kita. Laporan #{reportId.slice(0, 8)} sudah masuk sistem.
         </p>
+        {submittedAsGuest && (
+          <div className="mb-4 w-full rounded-2xl border border-primary/30 bg-primary-light/40 p-4 text-left">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 text-primary" />
+              <p className="text-xs font-semibold text-primary-dark leading-relaxed">
+                Laporan ini tidak akan muncul di Riwayat karena kamu belum login. Login untuk bisa melacak status laporan kamu.
+              </p>
+            </div>
+          </div>
+        )}
+
         {photoWarning && (
-          <div className="mb-6 w-full rounded-2xl border border-accent/30 bg-accent-light/40 p-4 text-left">
+          <div className="mb-4 w-full rounded-2xl border border-accent/30 bg-accent-light/40 p-4 text-left">
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 text-accent-dark" />
               <p className="text-xs font-semibold text-accent-dark">{photoWarning}</p>
@@ -181,12 +199,22 @@ export default function ReportForm() {
           >
             Lihat Laporan Lain
           </button>
-          <button
-            onClick={() => router.push('/riwayat')}
-            className="w-full py-3.5 bg-white border-2 border-border text-foreground font-semibold rounded-2xl hover:bg-muted-light transition-all duration-200 active:scale-95"
-          >
-            Pantau Riwayat & Status
-          </button>
+          {submittedAsGuest ? (
+            <button
+              onClick={() => router.push('/login?next=/riwayat')}
+              className="w-full py-3.5 bg-white border-2 border-primary text-primary font-semibold rounded-2xl hover:bg-primary hover:text-white transition-all duration-200 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Login untuk Pantau Status
+            </button>
+          ) : (
+            <button
+              onClick={() => router.push('/riwayat')}
+              className="w-full py-3.5 bg-white border-2 border-border text-foreground font-semibold rounded-2xl hover:bg-muted-light transition-all duration-200 active:scale-95"
+            >
+              Pantau Riwayat & Status
+            </button>
+          )}
         </div>
       </div>
     )

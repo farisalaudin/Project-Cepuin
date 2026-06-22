@@ -21,11 +21,15 @@ export const listWilayah = async (): Promise<Wilayah[]> => {
 }
 
 export const matchWilayahId = async (
-  geocodeResult: GeocodeAddress,
+  geocodeResult: GeocodeAddress & { displayName?: string },
   wilayahList?: Wilayah[]
 ): Promise<string | null> => {
   const wilayah = wilayahList ?? await listWilayah()
+
+  // Haystack mencakup semua field geocode + teks alamat lengkap dari Nominatim.
+  // Urutan: displayName dulu (paling lengkap), lalu field individual.
   const haystack = [
+    geocodeResult.displayName,
     geocodeResult.kabupaten,
     geocodeResult.kecamatan,
     geocodeResult.kelurahan,

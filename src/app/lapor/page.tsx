@@ -41,7 +41,7 @@ export default function LaporPage() {
         {showTip && (
           <div className="animate-in slide-in-from-top-2 fade-in duration-200 border-t border-primary/10 bg-primary-light/30 px-4 py-3 sm:px-6 lg:px-10">
             <p className="text-xs font-bold text-primary-dark">
-              💡 <strong>Tips:</strong> Isi kategori → pilih lokasi → foto opsional → kirim. Laporan tanpa login tetap bisa dikirim!
+              💡 <strong>Tips:</strong> Isi kategori → pilih lokasi → foto opsional → kirim. Laporan bisa dikirim tanpa login, tapi login diperlukan agar laporan muncul di Riwayat.
             </p>
           </div>
         )}

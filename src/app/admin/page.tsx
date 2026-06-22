@@ -18,8 +18,40 @@ import {
 import { Report, STATUSES, ReportStatus } from '@/types'
 import { cn } from '@/lib/cn'
 import { getAdminReports, updateReportStatus } from '@/lib/reports'
+import { resolveSafePhotoUrl } from '@/lib/photo-url'
 import Image from 'next/image'
 import { useToast } from '@/components/ui/Toast'
+
+function AdminPhotoPreview({ photoUrl }: { photoUrl: string | null }) {
+  const [imgError, setImgError] = useState(false)
+  const safeUrl = resolveSafePhotoUrl(photoUrl)
+
+  if (!safeUrl || imgError) {
+    return (
+      <div className="relative aspect-video rounded-3xl overflow-hidden bg-muted-light border-2 border-border shadow-inner">
+        <div className="w-full h-full flex flex-col items-center justify-center text-muted gap-2">
+          <AlertTriangle className="w-12 h-12 opacity-20" />
+          <p className="text-[10px] font-bold uppercase">
+            {!safeUrl ? 'Tidak ada foto' : 'Foto tidak dapat dimuat'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative aspect-video rounded-3xl overflow-hidden bg-muted-light border-2 border-border shadow-inner">
+      <Image
+        src={safeUrl}
+        alt="Laporan"
+        fill
+        sizes="(max-width: 768px) 100vw, 320px"
+        className="object-cover"
+        onError={() => setImgError(true)}
+      />
+    </div>
+  )
+}
 
 export default function AdminDashboard() {
   const toast = useToast()
@@ -330,22 +362,7 @@ export default function AdminDashboard() {
             <div className="flex-1 overflow-y-auto p-8 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Photo */}
-                <div className="relative aspect-video rounded-3xl overflow-hidden bg-muted-light border-2 border-border shadow-inner">
-                  {selectedReport.photo_url ? (
-                    <Image 
-                      src={selectedReport.photo_url} 
-                      alt="Laporan" 
-                      fill 
-                      sizes="(max-width: 768px) 100vw, 320px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-muted gap-2">
-                      <AlertTriangle className="w-12 h-12 opacity-20" />
-                      <p className="text-[10px] font-bold uppercase">Tidak ada foto</p>
-                    </div>
-                  )}
-                </div>
+                <AdminPhotoPreview photoUrl={selectedReport.photo_url} />
 
                 {/* Details */}
                 <div className="space-y-6">

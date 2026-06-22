@@ -23,6 +23,7 @@ import { cn } from '@/lib/cn'
 import { useRouter } from 'next/navigation'
 import { submitVote } from '@/lib/votes'
 import { formatTimeAgo } from '@/lib/utils'
+import { resolveSafePhotoUrl } from '@/lib/photo-url'
 import { useToast } from '@/components/ui/Toast'
 
 interface ReportCardProps {
@@ -49,22 +50,7 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
   const categoryInfo = CATEGORIES.find(c => c.value === report.category)
   const statusInfo = STATUSES.find(s => s.value === report.status)
   const CategoryIcon = categoryInfo ? iconMap[categoryInfo.icon] : MoreHorizontal
-  const photoSrc = report.photo_url?.trim() ?? ''
-
-  const isValidPhotoUrl = (() => {
-    if (!photoSrc) return false
-
-    try {
-      const parsed = new URL(photoSrc)
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-      if (!supabaseUrl) return false
-
-      const supabaseHost = new URL(supabaseUrl).hostname
-      return parsed.hostname === supabaseHost
-    } catch {
-      return false
-    }
-  })()
+  const photoSrc = resolveSafePhotoUrl(report.photo_url)
 
   const handleVote = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -95,7 +81,7 @@ export default function ReportCard({ report, onVoteSuccess }: ReportCardProps) {
       <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
         {/* Thumbnail */}
         <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-muted-light sm:h-24 sm:w-24">
-          {isValidPhotoUrl ? (
+          {photoSrc ? (
             <Image
               src={photoSrc}
               alt={report.category}

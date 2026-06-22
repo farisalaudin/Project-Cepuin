@@ -18,31 +18,11 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/cn'
 import { submitVote } from '@/lib/votes'
+import { resolveSafePhotoUrl } from '@/lib/photo-url'
 import { CATEGORIES, Report, STATUSES, StatusHistory } from '@/types'
 import { useToast } from '@/components/ui/Toast'
 
 const MapPreview = dynamic(() => import('@/components/MapPreview'), { ssr: false })
-
-const resolveSafePhotoUrl = (photoUrl?: string | null) => {
-  if (!photoUrl?.trim()) return null
-
-  try {
-    const parsed = new URL(photoUrl)
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
-
-    const host = parsed.hostname.toLowerCase()
-    const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname.toLowerCase()
-      : null
-
-    if (supabaseHost && host === supabaseHost) return photoUrl
-    if (host.endsWith('.supabase.co')) return photoUrl
-
-    return null
-  } catch {
-    return null
-  }
-}
 
 export default function LaporanDetailPage() {
   const params = useParams()
